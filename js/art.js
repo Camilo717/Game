@@ -118,23 +118,28 @@ const Art = (() => {
   };
 
   function avatar(s, opts = {}) {
-    const g = id('bg'), c = id('clip');
+    const g = id('bg'), f = id('ink'), h = id('ht'), m = id('hm');
     const sil = opts.silhouette;
+    const rays = Array.from({ length: 18 }, (_, i) => { const a = i / 18 * Math.PI * 2; return `<path d="M100 100 L${100 + Math.cos(a) * 160} ${100 + Math.sin(a) * 160} L${100 + Math.cos(a + .09) * 160} ${100 + Math.sin(a + .09) * 160}Z"/>`; }).join('');
     return `<svg class="avatar ${sil ? 'silhouette' : ''}" viewBox="0 0 200 200" aria-label="${s.name}">
       <defs>
-        <radialGradient id="${g}" cx="50%" cy="38%" r="70%">
-          <stop offset="0%" stop-color="${s.color}" stop-opacity=".95"/>
-          <stop offset="100%" stop-color="#140c33"/>
-        </radialGradient>
+        <radialGradient id="${g}" cx="50%" cy="40%" r="75%"><stop offset="0%" stop-color="${s.color}"/><stop offset="100%" stop-color="${s.color}" stop-opacity=".55"/></radialGradient>
         <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></linearGradient>
-        <clipPath id="${c}"><circle cx="100" cy="100" r="96"/></clipPath>
+        <pattern id="${h}" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><circle cx="3.5" cy="3.5" r="1.7" fill="#111"/></pattern>
+        <linearGradient id="${m}g" x1="0" y1="0" x2="1" y2="1"><stop offset=".45" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient>
+        <mask id="${m}"><rect width="200" height="200" fill="url(#${m}g)"/></mask>
+        <filter id="${f}" x="-15%" y="-15%" width="130%" height="130%">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="3.2" result="d"/>
+          <feFlood flood-color="#111"/><feComposite in2="d" operator="in" result="o"/>
+          <feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
       </defs>
-      <circle cx="100" cy="100" r="96" fill="url(#${g})"/>
-      <g clip-path="url(#${c})">
-        <g opacity=".25" fill="#fff"><circle cx="30" cy="40" r="2"/><circle cx="168" cy="52" r="1.6"/><circle cx="160" cy="130" r="1.4"/><circle cx="36" cy="140" r="1.8"/></g>
-        <g class="avatar-figure">${parts[s.id]()}</g>
-      </g>
-      <circle cx="100" cy="100" r="95" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3"/>
+      <rect width="200" height="200" fill="#151515"/>
+      <rect width="200" height="200" fill="url(#${g})"/>
+      <g fill="#fff" opacity=".18">${rays}</g>
+      <rect width="200" height="200" fill="url(#${h})" opacity=".22"/>
+      <g class="avatar-figure" filter="url(#${f})">${parts[s.id]()}</g>
+      <rect width="200" height="200" fill="url(#${h})" mask="url(#${m})" opacity=".35"/>
     </svg>`;
   }
 
@@ -153,7 +158,7 @@ const Art = (() => {
     const shapes = facets.map((p, i) => {
       const d = DISTRICTS[i];
       const on = restored.includes(ids[i]) || opts.all;
-      return `<path d="${p}" class="facet ${on ? 'on' : ''}" fill="${on ? d.color : '#3a3566'}" stroke="#fff" stroke-opacity="${on ? .9 : .25}" stroke-width="2"/>`;
+      return `<path d="${p}" class="facet ${on ? 'on' : ''}" fill="${on ? d.color : '#3b3b44'}" stroke="#111" stroke-width="5" stroke-linejoin="round"/>`;
     }).join('');
     const glow = (opts.all ? 5 : restored.length) / 5;
     return `<svg class="crystal" viewBox="0 0 200 210" width="${size}" height="${size}">
@@ -161,7 +166,7 @@ const Art = (() => {
       <circle cx="100" cy="105" r="${80 + glow * 25}" fill="url(#${g})" class="crystal-glow"/>
       ${shapes}
       <path d="M100 10 L130 70 L100 100 L70 70Z" fill="#fff" opacity=".12"/>
-      <path d="M100 100 L130 70 M100 100 L70 70" stroke="#fff" stroke-opacity=".4"/>
+      <path d="M78 40 L92 22" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".8"/>
       ${opts.cracked ? '<path d="M60 40 L95 95 L80 120 L120 160" stroke="#ff4fa3" stroke-width="3" fill="none" stroke-dasharray="4 3"/>' : ''}
     </svg>`;
   }

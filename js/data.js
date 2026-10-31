@@ -147,38 +147,38 @@ const CLUE_TEMPLATES = {
 /* ---------------- DISTRITOS / MISIONES ---------------- */
 const DISTRICTS = [
   {
-    id: 'plaza', name: 'Plaza Azul', app: 'Facebook', value: 'VOZ', color: '#2f7bff', color2: '#7fb2ff',
-    mission: 'Feed Frenético', icon: '⚡', minutes: 7,
-    tagline: '¡El feed se desborda! Moderen a toda velocidad.',
-    steps: [['🧑‍💻', 'Una persona por equipo al teclado'], ['⚡', '45 segundos de publicaciones'], ['🔥', 'Aciertos seguidos = combo']],
-    controls: 'feed', bonus: 'Tabú de Políticas',
+    id: 'plaza', name: 'Plaza Azul', app: 'Facebook', value: 'VOZ', color: '#3a86ff', color2: '#9cc3ff', ico: 'newspaper', gi: 'stamper',
+    mission: 'Feed Frenético', minutes: 6, seconds: 60, kind: 'arcade',
+    tagline: '¡El feed se desborda! Sellen cada publicación antes de que se acumulen.',
+    steps: [['stamper', 'Sellen cada publicación con la decisión correcta'], ['bright-explosion', 'Aciertos seguidos = combo'], ['robot-antennas', 'Ojo: la IA asistente a veces se equivoca']],
+    controls: 'feed',
   },
   {
-    id: 'puerto', name: 'Puerto Verde', app: 'WhatsApp', value: 'SEGURIDAD', color: '#25d366', color2: '#9ef7c0',
-    mission: 'Caza de Anzuelos', icon: '🎣', minutes: 6,
-    tagline: 'La Capitana Anzuelo lanzó sus mensajes al mar.',
-    steps: [['🌊', 'Los mensajes flotan en el mar'], ['🎣', 'Toquen SOLO las estafas'], ['💌', 'Los mensajes reales restan puntos']],
+    id: 'puerto', name: 'Puerto Verde', app: 'WhatsApp', value: 'SEGURIDAD', color: '#2ec4b6', color2: '#9ff0e7', ico: 'lighthouse', gi: 'fishing-hook',
+    mission: 'Caza de Anzuelos', minutes: 5, seconds: 45, kind: 'arcade',
+    tagline: 'La Capitana Anzuelo lanzó sus mensajes al mar nocturno.',
+    steps: [['envelope', 'Los mensajes llegan flotando'], ['fishing-hook', 'Toquen SOLO las estafas'], ['love-letter', 'Los mensajes reales restan puntos']],
     controls: 'mouse',
   },
   {
-    id: 'isla', name: 'Isla Gradiente', app: 'Instagram', value: 'DIGNIDAD', color: '#ff4f8b', color2: '#ffb36b',
-    mission: 'El Consejo de la Isla', icon: '⚖️', minutes: 10,
-    tagline: 'Casos difíciles. Abogados apasionados. Un público que ruge.',
-    steps: [['🟢', 'Un equipo defiende NO VIOLATION'], ['🔴', 'Otro equipo defiende REMOVE'], ['👏', 'El público decide con el aplausómetro']],
-    controls: 'voice',
+    id: 'isla', name: 'Isla Gradiente', app: 'Instagram', value: 'DIGNIDAD', color: '#ff5d8f', color2: '#ffb3c9', ico: 'photo-camera', gi: 'gavel',
+    mission: 'El Consejo de la Isla', minutes: 10, kind: 'council',
+    tagline: 'Casos difíciles. Cada equipo decide, argumenta... y vota el mejor argumento.',
+    steps: [['stamper', 'Elijan la decisión y escriban por qué'], ['vote', 'Voten el argumento más convincente'], ['gavel', 'Se revela la decisión correcta']],
+    controls: 'write',
   },
   {
-    id: 'torre', name: 'Torre Espiral', app: 'Threads', value: 'AUTENTICIDAD', color: '#22d3ee', color2: '#b3f5ff',
-    mission: 'Rompe la Cadena', icon: '🔗', minutes: 7,
-    tagline: 'Un rumor falso corre por la red. ¡Deténganlo!',
-    steps: [['🔥', 'El rumor salta de usuario en usuario'], ['🛡️', 'Toquen usuarios para verificarlos'], ['🔋', 'La energía es limitada: ¡elijan bien!']],
-    controls: 'mouse', bonus: 'Teléfono Viral',
+    id: 'torre', name: 'Torre Espiral', app: 'Threads', value: 'AUTENTICIDAD', color: '#ffcf33', color2: '#ffe999', ico: 'radio-tower', gi: 'mesh-network',
+    mission: 'Rompe la Cadena', minutes: 7, seconds: 40, kind: 'arcade', bonus: 'chain',
+    tagline: 'Un rumor falso corre por la red. ¡Córtenlo antes de que llegue a todos!',
+    steps: [['fire', 'El rumor salta de usuario en usuario'], ['checked-shield', 'Toquen usuarios para verificarlos'], ['hourglass', 'La energía es limitada: ¡elijan bien!']],
+    controls: 'mouse',
   },
   {
-    id: 'nebulosa', name: 'Nebulosa Horizon', app: 'Meta Quest', value: 'PRIVACIDAD', color: '#a78bfa', color2: '#f0abfc',
-    mission: 'Escáner de Privacidad', icon: '🔦', minutes: 7,
-    tagline: 'El cómplice del ladrón publica TODO. Usen la linterna.',
-    steps: [['🔦', 'Muevan la linterna por el perfil oculto'], ['💎', 'Toquen los datos que no deberían ser públicos'], ['🔐', 'Al final: ¡todos a abrir la bóveda!']],
+    id: 'nebulosa', name: 'Nebulosa Horizon', app: 'Meta Quest', value: 'PRIVACIDAD', color: '#9b5de5', color2: '#d2b6f5', ico: 'vr-headset', gi: 'flashlight',
+    mission: 'Escáner de Privacidad', minutes: 7, seconds: 40, kind: 'arcade', vault: true,
+    tagline: 'El cómplice del ladrón lo publica TODO. Encuentren sus datos con la linterna.',
+    steps: [['flashlight', 'Muevan la linterna por el perfil oculto'], ['cut-diamond', 'Toquen los datos que no deberían ser públicos'], ['combination-lock', 'Después: ¡carrera para abrir la bóveda!']],
     controls: 'mouse',
   },
 ];
@@ -197,16 +197,16 @@ const FEED_POSTS = [
   { u: 'te.sigo.si.me.sigues', av: '🔁', t: '¡¡SÍGUEME Y TE SIGO!! 1.000 seguidores GRATIS 👉 bit.ly/s3gu1d0r3s 👉 bit.ly/s3gu1d0r3s', d: 'remove', policy: 'spam' },
   { u: 'salud.natural.ya', av: '🍋', t: 'El agua con limón cura el cáncer en 3 días. ¡Los médicos lo ocultan!', d: 'remove', policy: 'misinfo' },
   { u: 'info.electoral', av: '🗳️', t: 'OJO: las elecciones se cambiaron para el lunes. ¡No vayan el domingo!', d: 'remove', policy: 'misinfo' },
-  { u: 'chismes.nx', av: '🤡', t: 'Este es el número y la dirección de mi ex: 300 555 1234, Calle 8 #20. ¡Escríbanle!', d: 'remove', policy: 'privacy' },
+  { u: 'chismes.nx', av: '🤡', t: 'Este es el número y la dirección de mi ex: 300 555 1234, Calle 8 #20. ¡Escríbanle!', d: 'remove', policy: 'privacy', appeal: 'Es mi derecho expresarme, no hice nada malo.' },
   { u: 'anonimo_123', av: '🎭', t: '@valen eres tan fea que das asco. Nadie te quiere en el colegio 🤮', d: 'remove', policy: 'bullying' },
   { u: 'trabajo.exterior', av: '✈️', t: 'Trabajo en el extranjero, sin experiencia. Envíanos tu pasaporte y viajas el lunes ✈️', d: 'remove', policy: 'humanexp' },
   { u: 'noticias.nx', av: '🚑', t: 'Así quedó la avenida tras el accidente de hoy. Imágenes fuertes. ¡Manejen con cuidado! 🎥', d: 'disturbing', policy: 'graphic' },
-  { u: 'reportero.libre', av: '📹', t: 'Video de la protesta de hoy: hubo varios heridos. El mundo tiene que verlo.', d: 'disturbing', policy: 'graphic' },
+  { u: 'reportero.libre', av: '📹', t: 'Video de la protesta de hoy: hubo varios heridos. El mundo tiene que verlo.', d: 'disturbing', policy: 'graphic', appeal: 'Soy periodista, es información de interés público.' },
   { u: 'rescate.animal', av: '🐕', t: 'Así encontramos a este perrito herido. Hoy está a salvo gracias a ustedes 🙏 (imágenes sensibles)', d: 'disturbing', policy: 'graphic' },
   { u: 'futbolero', av: '⚽', t: '¡Qué partidazo! 3-0 y a la final 🔥🔥', d: 'noviolation' },
   { u: 'la.abuela.cocina', av: '🫓', t: 'Receta de la abuela: arepas con queso. ¡Quedan perfectas! ❤️', d: 'noviolation' },
-  { u: 'humor.nexopolis', av: '🥔', t: 'El alcalde prometió arreglar las calles hace 3 años. Aquí su retrato oficial 🥔👑 #sátira', d: 'noviolation' },
-  { u: 'seriefan', av: '📺', t: 'Si alguien me cuenta el final de la serie, ¡lo mato! 😂😂', d: 'noviolation' },
+  { u: 'humor.nexopolis', av: '🥔', t: 'El alcalde prometió arreglar las calles hace 3 años. Aquí su retrato oficial 🥔👑 #sátira', d: 'noviolation', appeal: 'Lo eliminaron por error. ¡Es sátira sobre un político!' },
+  { u: 'seriefan', av: '📺', t: 'Si alguien me cuenta el final de la serie, ¡lo mato! 😂😂', d: 'noviolation', appeal: 'Era una broma, nadie corre peligro.' },
   { u: 'memoria.nx', av: '🕊️', t: 'Hoy se cumple un año del ataque de Puño Gris. Recordamos a las víctimas. Nunca más.', d: 'noviolation' },
   { u: 'lectora.feliz', av: '📚', t: '¿Me recomiendan libros de misterio? 🕵️', d: 'noviolation' },
   { u: 'nuevo.empleo', av: '💼', t: 'Primer día en el trabajo nuevo. ¡Deséenme suerte!', d: 'noviolation' },
@@ -252,23 +252,6 @@ const SEA_MSGS = {
   ],
 };
 
-/* ---------------- BONUS PLAZA AZUL: TABÚ DE POLÍTICAS ----------------
-   Expliquen el nombre oficial de la política sin decir las palabras prohibidas. */
-const TABOO_CARDS = [
-  { word: 'Hateful Conduct', policy: 'hate', banned: ['odio', 'conducta', 'insulto', 'raza', 'religión'] },
-  { word: 'Violence and Incitement', policy: 'violence', banned: ['violencia', 'amenaza', 'matar', 'golpear', 'incitar'] },
-  { word: 'Dangerous Organizations and Individuals', policy: 'doi', banned: ['terrorismo', 'grupo', 'peligroso', 'banda', 'organización'] },
-  { word: 'Coordinating Harm and Promoting Crime', policy: 'coord', banned: ['delito', 'crimen', 'planear', 'organizar', 'daño'] },
-  { word: 'Cybersecurity', policy: 'cyber', banned: ['seguridad', 'contraseña', 'virus', 'robar', 'cuenta'] },
-  { word: 'Prohibited Commercial Practices', policy: 'commercial', banned: ['vender', 'comercio', 'negocio', 'fraude', 'prohibido'] },
-  { word: 'Restricted Goods and Services', policy: 'restricted', banned: ['armas', 'drogas', 'vender', 'medicamentos', 'restringido'] },
-  { word: 'Bullying and Harassment', policy: 'bullying', banned: ['acoso', 'molestar', 'burla', 'colegio', 'víctima'] },
-  { word: 'Privacy Violations', policy: 'privacy', banned: ['privado', 'datos', 'dirección', 'teléfono', 'privacidad'] },
-  { word: 'Violent and Graphic Content', policy: 'graphic', banned: ['sangre', 'violencia', 'imagen', 'advertencia', 'herido'] },
-  { word: 'Misinformation', policy: 'misinfo', banned: ['falso', 'noticia', 'mentira', 'verdad', 'información'] },
-  { word: 'Spam', policy: 'spam', banned: ['repetir', 'basura', 'mensaje', 'publicidad', 'clic'] },
-];
-
 /* ---------------- MISIÓN 3: EL CONSEJO ----------------
    verdict = decisión correcta (remove | disturbing | noviolation) */
 const COUNCIL_CASES = [
@@ -312,9 +295,12 @@ const COUNCIL_CASES = [
 
 /* ---------------- BONUS TORRE ESPIRAL: TELÉFONO VIRAL ---------------- */
 const PHONE_MESSAGES = [
-  'ÚLTIMA HORA: la alcaldesa Brillo confirmó que el martes 14 el puente de la Plaza Azul cerrará de 3 a 5 de la tarde por mantenimiento, pero el tren flotante será gratis para mayores de 60.',
-  'Según el laboratorio de la Torre Espiral, los gatos naranjas del Puerto Verde NO transmiten el virus del glitch, pero recomiendan limpiar los visores VR dos veces por semana con agua tibia.',
-  'El festival de la Nebulosa se pasa al sábado 22 porque se escaparon 3 dragones de neón; los boletos del viernes siguen sirviendo si los cambian antes del jueves al mediodía.',
+  'La alcaldesa confirmó que el martes 14 el puente de la Plaza Azul cerrará de 3 a 5 de la tarde, pero el tren flotante será gratis para mayores de 60.',
+  'Según el laboratorio de la Torre Espiral, los gatos naranjas del puerto NO transmiten el virus del glitch, pero hay que limpiar los visores dos veces por semana.',
+  'El festival de la Nebulosa se pasa al sábado 22 porque se escaparon 3 dragones de neón; los boletos del viernes sirven si los cambian antes del jueves.',
+  'La biblioteca de Nexópolis abrirá los domingos desde marzo, de 9 a 1, y prestará visores de realidad virtual a quien lleve su carné azul.',
+  'Mañana a las 7 habrá un simulacro en el Puerto Verde: sonará la sirena 2 veces, pero los ferris seguirán saliendo cada 20 minutos.',
+  'El concurso de memes del colegio Faro se canceló por lluvia; el premio de 500 corazones se entregará el viernes en la cafetería del tercer piso.',
 ];
 
 /* ---------------- MISIÓN 5: ESCÁNER DE PRIVACIDAD ---------------- */
@@ -354,4 +340,18 @@ const LESSONS = {
   isla:     { value: 'DIGNIDAD', text: 'La sátira y la crítica caben; exponer, amenazar o acosar a personas, no.' },
   torre:    { value: 'AUTENTICIDAD', text: 'Un rumor corre más rápido que la verdad. Verifica antes de compartir.' },
   nebulosa: { value: 'PRIVACIDAD', text: 'Lo que publicas puede usarse en tu contra: cuida tus datos y usa contraseñas únicas.' },
+};
+
+/* ---------------- INSIGNIAS (inspiradas en "Bad News") ---------------- */
+const BADGES = {
+  ojo:       { name: 'Ojo de halcón',   icon: 'eye-target',       desc: 'Feed sin errores (mín. 8 publicaciones)' },
+  racha:     { name: 'Racha imparable', icon: 'bright-explosion', desc: 'Combo de 6 o más' },
+  antiia:    { name: 'Más listo que la IA', icon: 'robot-antennas', desc: 'Corrigió a la IA asistente 3 veces' },
+  pescador:  { name: 'Pescador experto', icon: 'fishing-hook',    desc: '8 estafas atrapadas sin tocar mensajes reales' },
+  cortafuego:{ name: 'Cortafuegos',     icon: 'checked-shield',   desc: 'Terminó con la red sana al 75% o más' },
+  linterna:  { name: 'Linterna de oro', icon: 'flashlight',       desc: 'Encontró los 6 datos expuestos' },
+  hacker:    { name: 'Hacker ético',    icon: 'combination-lock', desc: 'Primer equipo en abrir la bóveda' },
+  orador:    { name: 'Pico de oro',     icon: 'microphone',       desc: 'El argumento más votado en un caso del Consejo' },
+  juez:      { name: 'Juez certero',    icon: 'gavel',            desc: 'Acertó todas las decisiones del Consejo' },
+  detective: { name: 'Gran detective',  icon: 'sherlock-holmes',  desc: 'Descubrió al culpable' },
 };

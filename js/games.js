@@ -56,39 +56,52 @@ const Games = (() => {
     const stack = A.querySelector('.feed-stack');
     const deck = shuffle(FEED_POSTS);
     let i = 0, combo = 0, cur = null;
+    const st = { ok: 0, bad: 0, maxCombo: 0, ai: 0 };
+    const others = d => Object.keys(DECISIONS).filter(k => k !== d);
 
     function spawn() {
       const p = deck[i++ % deck.length];
       const el = document.createElement('div');
       el.className = 'fcard';
-      el.innerHTML = `<div class="fh"><span class="fav">${p.av}</span><div><b>@${p.u}</b><small>hace ${Math.ceil(rnd(1, 59))} min · 🌎</small></div><span class="fdots">⋯</span></div>
-        <div class="ftxt">${p.t}</div><div class="freact"><span>👍 Me gusta</span><span>💬 Comentar</span><span>↗ Compartir</span></div><div class="fbar"><i></i></div>`;
+      const showAi = Math.random() < .55, aiOk = Math.random() < .7;
+      const aiDec = aiOk ? p.d : others(p.d)[Math.floor(Math.random() * 2)];
+      el.innerHTML = `${p.appeal ? `<div class="fappeal">${icon('megaphone')} APELACIÓN DEL USUARIO: “${p.appeal}”</div>` : ''}
+        <div class="fh"><span class="fav">${p.av}</span><div><b>@${p.u}</b><small>hace ${Math.ceil(rnd(1, 59))} min · reportado ${Math.ceil(rnd(2, 40))} veces</small></div><span class="fcase">CASO #${1000 + Math.floor(rnd(0, 8999))}</span></div>
+        <div class="ftxt">${p.t}</div>
+        ${showAi ? `<div class="fai">${icon('robot-antennas')} La IA asistente sugiere: <b>${DECISIONS[aiDec].label}</b> <small>(${Math.round(rnd(71, 97))}% segura)</small></div>` : ''}
+        <div class="fbar"><i></i></div>`;
       stack.appendChild(el);
-      cur = { p, el, bar: el.querySelector('.fbar i'), age: 0, life: Math.max(3.4, 6.5 - combo * .3 - api.progress() * 1.5) };
+      cur = { p, el, bar: el.querySelector('.fbar i'), age: 0, life: Math.max(4, 7.5 - combo * .3 - api.progress() * 1.5), showAi, aiDec };
     }
     function resolve(dec) {
       if (!cur) return;
-      const { p, el } = cur; cur = null;
+      const { p, el, showAi, aiDec } = cur; cur = null;
       const [x, y] = relPos(A, el);
       const ok = dec === p.d;
-      el.classList.add('out', 'out-' + (dec || 'timeout'), ok ? 'ok' : 'bad');
+      if (dec) {
+        el.insertAdjacentHTML('beforeend', `<div class="fstamp" style="--dc:${DECISIONS[dec].color}">${DECISIONS[dec].label}</div>`);
+        api.sfx.stamp();
+      }
+      el.classList.add(ok ? 'ok' : 'bad');
+      setTimeout(() => el.classList.add('out', 'out-' + (dec || 'timeout')), dec ? 420 : 0);
       if (ok) {
-        combo++;
+        combo++; st.ok++; st.maxCombo = Math.max(st.maxCombo, combo);
+        if (showAi && aiDec !== p.d) { st.ai++; floatText(A, x, y + 70, '🤖 ¡Le ganaste a la IA!', '#ffcf33'); }
         const pts = Math.min(100, 40 + (combo - 1) * 10);
         const label = p.policy ? `✔ ${pol(p.policy).en}` : '✔ NO VIOLATION';
         api.add(pts, x, y - 60, `+${pts}<small>${label}</small>`, DECISIONS[p.d].color);
         burst(A, x, y, DECISIONS[p.d].color);
         api.sfx.pop(combo);
       } else {
-        combo = 0;
+        combo = 0; st.bad++;
         const why = `Era <b>${DECISIONS[p.d].label}</b>${p.policy ? ` · ${pol(p.policy).en}` : ''}`;
         api.add(dec ? -30 : -20, x, y - 60, `${dec ? '✘' : '⏰ ¡Lento!'}<small>${why}</small>`, '#ff4d6d');
         api.shake(); api.sfx.err();
         api.log({ text: p.t, right: p.d, policy: p.policy, chose: dec });
       }
       api.combo(combo);
-      setTimeout(() => el.remove(), 600);
-      setTimeout(spawn, 230);
+      setTimeout(() => el.remove(), 1100);
+      setTimeout(spawn, dec ? 650 : 250);
     }
     const keyMap = { ArrowLeft: 'remove', a: 'remove', A: 'remove', ArrowRight: 'noviolation', d: 'noviolation', D: 'noviolation', ArrowDown: 'disturbing', s: 'disturbing', S: 'disturbing' };
     const onKey = e => {
@@ -108,7 +121,10 @@ const Games = (() => {
       cur.bar.style.background = f > .7 ? '#ff4d6d' : f > .45 ? '#ffd23f' : '#25d366';
       if (f >= 1) resolve(null);
     });
-    return { stop() { stopLoop(); document.removeEventListener('keydown', onKey); cur = null; } };
+    return {
+      stop() { stopLoop(); document.removeEventListener('keydown', onKey); cur = null; },
+      stats: () => ({ ...st, badges: [st.bad === 0 && st.ok >= 8 && 'ojo', st.maxCombo >= 6 && 'racha', st.ai >= 3 && 'antiia'].filter(Boolean) }),
+    };
   }
 
   /* ------------------------------------------------------------------
@@ -130,6 +146,7 @@ const Games = (() => {
     const scams = shuffle(SEA_MSGS.scam), legit = shuffle(SEA_MSGS.legit);
     let si = 0, li = 0, spawnT = .6, combo = 0;
     const alive = new Set();
+    const st = { caught: 0, wrong: 0, escaped: 0 };
 
     function spawn() {
       const free = slots.filter(s => !s.busy); if (!free.length) return;
@@ -140,7 +157,7 @@ const Games = (() => {
       el.className = 'bottle ' + (isScam ? 'scam' : 'legit');
       el.style.left = `${4 + slot.c * 24 + rnd(0, 4)}%`; el.style.top = `${10 + slot.r * 25 + rnd(0, 6)}%`;
       el.style.animationDelay = `${rnd(0, 1)}s`;
-      el.innerHTML = `<div class="bm"><b>${m.from}</b><span>${m.text}</span></div>${isScam ? '<i class="hook">🪝</i>' : ''}`;
+      el.innerHTML = `<div class="bm"><b>${icon('envelope')} ${m.from}</b><span>${m.text}</span></div>`;
       const life = lerp(3.8, 2.5, api.progress());
       const item = { el, slot, m, isScam, t: 0, life, done: false };
       el.onclick = () => hit(item);
@@ -154,12 +171,12 @@ const Games = (() => {
       if (item.done) return;
       const [x, y] = relPos(A, item.el);
       if (item.isScam) {
-        combo++;
+        combo++; st.caught++;
         const pts = 40 + Math.min(4, combo - 1) * 5;
         api.add(pts, x, y - 40, `+${pts}<small>✔ ${pol(item.m.policy).en}</small>`, '#25d366');
         burst(A, x, y, '#ffd23f', 20); api.sfx.pop(combo); kill(item, 'caught');
       } else {
-        combo = 0;
+        combo = 0; st.wrong++;
         api.add(-40, x, y - 40, `✘ ¡Era real!<small>${item.m.from}</small>`, '#ff4d6d');
         api.shake(); api.sfx.err(); kill(item, 'wrong');
         api.log({ text: `${item.m.from}: ${item.m.text}`, right: 'legit' });
@@ -175,7 +192,7 @@ const Games = (() => {
         if (it.t >= it.life) {
           if (it.isScam) {
             const [x, y] = relPos(A, it.el);
-            combo = 0; api.combo(0);
+            combo = 0; api.combo(0); st.escaped++;
             api.add(-15, x, y - 30, '🎣 ¡Se escapó!', '#ff8a3d');
             api.log({ text: `${it.m.from}: ${it.m.text}`, right: 'scam', policy: it.m.policy });
           }
@@ -183,7 +200,7 @@ const Games = (() => {
         }
       }
     });
-    return { stop() { stopLoop(); } };
+    return { stop() { stopLoop(); }, stats: () => ({ ...st, badges: st.caught >= 8 && !st.wrong ? ['pescador'] : [] }) };
   }
 
   /* ------------------------------------------------------------------
@@ -242,7 +259,7 @@ const Games = (() => {
       ctx.clearRect(0, 0, W, H);
       for (const [a, b] of edgeList) {
         const na = nodes[a], nb = nodes[b];
-        ctx.strokeStyle = na.s === 1 && nb.s === 1 ? 'rgba(255,77,109,.6)' : 'rgba(255,255,255,.14)';
+        ctx.strokeStyle = na.s === 1 && nb.s === 1 ? 'rgba(215,38,61,.9)' : na.s === 1 || nb.s === 1 ? 'rgba(215,38,61,.45)' : 'rgba(242,232,208,.22)';
         ctx.lineWidth = 2 * dpr; ctx.beginPath(); ctx.moveTo(na.x, na.y); ctx.lineTo(nb.x, nb.y); ctx.stroke();
       }
       for (const p of pulses) {
@@ -255,7 +272,8 @@ const Games = (() => {
         const wob = n.s === 1 ? Math.sin(now / 120 + n.x) * 2 * dpr : 0;
         if (n.s === 1) { ctx.fillStyle = 'rgba(255,77,109,.18)'; ctx.beginPath(); ctx.arc(n.x, n.y, R * (1.7 + .25 * Math.sin(now / 200)), 0, 7); ctx.fill(); }
         if (n.pulse > 0) { ctx.strokeStyle = n.s === 2 ? `rgba(34,211,238,${n.pulse})` : `rgba(255,77,109,${n.pulse})`; ctx.lineWidth = 3 * dpr; ctx.beginPath(); ctx.arc(n.x, n.y, R * (1 + (1 - n.pulse) * 2), 0, 7); ctx.stroke(); }
-        ctx.fillStyle = n.s === 0 ? '#e2e8f0' : n.s === 1 ? '#ff4d6d' : '#22d3ee';
+        ctx.fillStyle = n.s === 0 ? '#f2e8d0' : n.s === 1 ? '#d7263d' : '#2ec4b6';
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 3 * dpr; ctx.beginPath(); ctx.arc(n.x + wob, n.y, R + 1.5 * dpr, 0, 7); ctx.stroke();
         ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = (n.s ? 16 : 6) * dpr;
         ctx.beginPath(); ctx.arc(n.x + wob, n.y, R, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
         ctx.font = `${R * 1.1}px sans-serif`;
@@ -291,6 +309,7 @@ const Games = (() => {
     });
     return {
       stop() { stopLoop(); cv.removeEventListener('pointerdown', onClick); },
+      stats: () => { const hp = nodes.filter(n => n.s !== 1).length / nodes.length; return { health: Math.round(hp * 100), badges: hp >= .75 ? ['cortafuego'] : [] }; },
       onEnd() {
         const healthy = nodes.filter(n => n.s !== 1).length;
         const pts = healthy * 10;
@@ -328,7 +347,7 @@ const Games = (() => {
         setTimeout(api.end, 900);
       }
     });
-    return { stop() { sc.removeEventListener('pointermove', move); } };
+    return { stop() { sc.removeEventListener('pointermove', move); }, stats: () => ({ found: found.size, badges: found.size === total ? ['linterna'] : [] }) };
   }
 
   return { feed, sea, chain, scanner, burst, floatText };

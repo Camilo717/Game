@@ -1,110 +1,151 @@
-# 💎 El Caso del Cristal Robado
+# 🔎 El Caso del Cristal Robado
 
-**Un misterio grupal e interactivo sobre las políticas de Meta.**
-Juego de ~45 minutos para 2–6 equipos, pensado para proyectarse en una pantalla grande y dirigirlo desde una sola computadora.
+**Un misterio por equipos, en red, sobre las Normas Comunitarias de Meta.**
+Cada equipo juega desde **su propia computadora**, en lugares distintos y sin necesidad de videollamada. Una persona **moderadora** crea la sala y dirige el ritmo. Dura unos 45 minutos y admite de 2 a 8 equipos (recomendado: de 3 a 6).
 
-> Anoche, a las 23:00, alguien robó el **Cristal de la Confianza** de Nexópolis, la ciudad flotante de la comunidad.
-> Se rompió en 5 fragmentos: **Voz, Seguridad, Dignidad, Autenticidad y Privacidad**.
-> La Liga de Guardianes (¡ustedes!) debe recuperarlos, ganar pistas secretas y desenmascarar al culpable entre 6 sospechosos.
+> Nexópolis, 23:00. Alguien robó el **Cristal de la Confianza**, que se rompió en 5 fragmentos: **Voz, Seguridad, Dignidad, Autenticidad y Privacidad**.
+> Los equipos (la Liga de Guardianes) juegan misiones para recuperarlos, ganan **pistas secretas** que llegan en privado a su pantalla, negocian en el **Mercado de Pistas**... y acusan a uno de 6 sospechosos.
 
-**Es un juego de acción:** cada misión es un minijuego arcade por turnos. Una persona de cada equipo juega frente a la pantalla mientras su equipo le grita consejos. Todo está en español, excepto los **nombres oficiales de las políticas** y las **decisiones de moderación** (**REMOVE**, **NO VIOLATION** y **MARK AS DISTURBING**).
-
----
-
-## 📚 Las 18 políticas de las Normas Comunitarias
-
-El juego está alineado con las 18 políticas de las Normas Comunitarias de Meta. Cada misión desbloquea las de su distrito en el **📚 Archivo de Políticas** (botón en la barra superior):
-
-| Distrito / misión | Políticas que desbloquea | Dónde aparecen en el juego |
-|---|---|---|
-| ⚡ Plaza Azul · Feed Frenético | Hateful Conduct · Violence and Incitement · Dangerous Organizations and Individuals · Coordinating Harm and Promoting Crime | Publicaciones del Feed, cartas de Tabú, casos del Consejo (*spoiler*, *hincha furioso*, *grupo armado*) |
-| 🎣 Puerto Verde · Caza de Anzuelos | Cybersecurity · Prohibited Commercial Practices · Restricted Goods and Services · Human Exploitation 🛡️ | Mensajes de estafa en el mar, casos *farmacia del DM* y *oferta de trabajo soñada*, sospechosos |
-| ⚖️ Isla Gradiente · Consejo | Bullying and Harassment · Violent and Graphic Content · Suicide, Self-Injury, and Eating Disorders 🛡️ · Adult Nudity and Sexual Activity 🛡️ · Adult Sexual Solicitation and Sexually Explicit Language 🛡️ | Casos *papa presidencial*, *captura expuesta*, *video de la protesta* |
-| 🔗 Torre Espiral · Rompe la Cadena | Misinformation · Spam | Red de rumores, caso *té milagroso*, cadenas en el mar |
-| 🔦 Nebulosa Horizon · Escáner | Privacy Violations · Adult Sexual Exploitation 🛡️ · Child Sexual Exploitation, Abuse, and Nudity 🛡️ | Auditoría de privacidad, casos con datos personales |
-
-🛡️ **Políticas de protección especial**: por respeto, estas **no se juegan** (no hay publicaciones, cartas ni debates sobre ellas). Aparecen en el Archivo con una explicación clara y seria. Es un buen momento para que la persona moderadora haga una pausa y las comente.
+Estilo visual: **cómic noir de detectives**, con papel envejecido, semitonos, tablero de corcho con polaroids y onomatopeyas. Todo está en español, excepto los **nombres oficiales de las políticas** y las **decisiones de moderación** (**REMOVE**, **NO VIOLATION** y **MARK AS DISTURBING**).
 
 ---
 
-## ▶️ Cómo abrirlo
+## 🎮 Las misiones
 
-1. Descarga o clona este repositorio.
-2. Abre `index.html` en Chrome, Edge o Firefox. No hay que instalar nada.
-3. Conecta la computadora al proyector y pulsa **⛶ Pantalla completa**.
-4. Activa el sonido 🔊: hay efectos de temporizador, fanfarrias y redobles.
+Todas se juegan **a la vez**: cada equipo en su computadora, con un marcador en vivo para la persona moderadora.
 
-> 💡 También puedes publicarlo gratis con **GitHub Pages** (Settings → Pages → rama principal) y abrirlo desde cualquier navegador.
+| Distrito | Misión | Cómo se juega | Inspiración |
+|---|---|---|---|
+| Plaza Azul | **Feed Frenético** | Llegan publicaciones reportadas y se sellan con las flechas: ← REMOVE · ↓ MARK AS DISTURBING · → NO VIOLATION. Hay combos, apelaciones de usuarios y una "IA asistente" que sugiere decisiones y **a veces se equivoca** | *Papers, Please*, *Moderator Mayhem* |
+| Puerto Verde | **Caza de Anzuelos** | Mensajes que flotan en un puerto nocturno: hay que tocar **solo las estafas**. Tocar un mensaje real resta puntos | Juegos de reflejos |
+| Isla Gradiente | **El Consejo** | Cada equipo elige la decisión para un caso difícil y escribe un argumento. Luego todos votan, en anónimo, el argumento más convincente. Al final se revela la decisión correcta | *Quiplash* (Jackbox) |
+| Torre Espiral | **Rompe la Cadena** | Un rumor salta de usuario en usuario por una red: hay que verificarlos con energía limitada para frenarlo. **Bonus:** *Teléfono en cadena*, en el que cada equipo reescribe de memoria la noticia que le pasó el anterior | *Gartic Phone*, *Bad News* |
+| Nebulosa Horizon | **Escáner de Privacidad** | Una linterna recorre un perfil a oscuras para encontrar los datos expuestos. Después viene una **carrera para abrir la bóveda** adivinando la contraseña con lo que publicó el cómplice | Juegos de objetos ocultos |
 
-El progreso se guarda solo en el navegador. Si la página se recarga por error, puedes elegir **Continuar partida**.
+Además:
+- **Pistas privadas:** el mejor equipo de cada misión recibe su pista solo en su pantalla, y queda guardada en su *Libreta*.
+- **Mercado de Pistas:** los equipos se envían mensajes. Las pistas compartidas desde la libreta llegan con el sello **VERIFICADA**; los mensajes escritos a mano, con **SIN VERIFICAR** (¡se puede mentir!). También se pueden pagar corazones a otro equipo.
+- **Insignias:** se ganan logros como "Ojo de halcón", "Más listo que la IA" o "Hacker ético".
+- **Archivo de Políticas:** cada misión desbloquea las políticas de su distrito.
 
 ---
 
-## 🧰 Materiales
+## ▶️ Cómo jugar
 
-- Una computadora con proyector o TV (y parlantes si es posible).
-- **Papel y lápiz por equipo.** Opcional: imprime la *Hoja del detective* desde el menú ☰ → 🖨️.
-- Una persona **moderadora** que maneja la computadora y reparte los puntos.
+### Opción A: ensayar en una sola computadora (sin configurar nada)
+1. Abre `index.html` en Chrome.
+2. Pulsa **Crear sala**: esa pestaña es la del moderador.
+3. Abre el enlace del equipo en **otras pestañas del mismo navegador** (cada pestaña es un equipo).
 
-**Equipos recomendados:** de 3 a 5 equipos, con 3 a 6 personas cada uno.
+Así funciona el **modo prueba**, ideal para conocer el juego antes del evento.
+
+### Opción B: partida real, cada equipo en su computadora
+Hacen falta dos cosas:
+1. **Conectar Firebase** (gratis, unos 10 minutos; ver abajo).
+2. **Publicar el juego en internet** para que todos abran el mismo enlace. Lo más fácil es GitHub Pages: en el repositorio, entra a **Settings → Pages → Deploy from a branch → `main` / `(root)`**. Quedará en `https://<tu-usuario>.github.io/<repositorio>/`. Si el repositorio es privado, GitHub Pages requiere un plan de pago.
+
+El día del juego:
+1. La persona moderadora abre el enlace y pulsa **Crear sala**. Aparece un **código de 4 letras**, un **código QR** y un enlace.
+2. Cada equipo abre el enlace (o escribe el código), registra su nombre, insignia y color.
+3. La persona moderadora controla todo desde la barra inferior: historia, mapa, misiones, pistas, mercado, acusación y final. El menú ☰ permite ajustar puntos o saltar al Mercado si el tiempo apremia.
+
+> ⚠️ El artefacto de Claude no permite conexiones externas, así que ahí el juego solo funciona en modo prueba. Para jugar en red, usa GitHub Pages u otro hosting.
+
+---
+
+## 🔥 Conectar Firebase (paso a paso)
+
+1. Entra a <https://console.firebase.google.com> con una cuenta de Google y pulsa **Crear un proyecto** (por ejemplo, `cristal-robado`). Google Analytics no hace falta.
+2. En el menú izquierdo: **Compilación → Realtime Database → Crear base de datos**. Elige una ubicación y empieza en **modo bloqueado**.
+3. En la pestaña **Reglas** de la base de datos, pega esto y pulsa **Publicar**:
+   ```json
+   {
+     "rules": {
+       "rooms": {
+         "$code": { ".read": true, ".write": true }
+       }
+     }
+   }
+   ```
+4. Ve a **Configuración del proyecto** (el engranaje) → **Tus apps** → el ícono **`</>`** (Web) → registra la app con cualquier nombre. Firebase te mostrará un bloque `firebaseConfig`.
+5. Copia esos valores en **`js/config.js`**:
+   ```js
+   window.FIREBASE_CONFIG = {
+     apiKey: 'AIza...',
+     authDomain: 'cristal-robado.firebaseapp.com',
+     databaseURL: 'https://cristal-robado-default-rtdb.firebaseio.com',
+     projectId: 'cristal-robado',
+     appId: '1:...:web:...',
+   };
+   ```
+   Si `databaseURL` no aparece, cópiala de la parte superior de la página de Realtime Database.
+6. Sube el cambio a GitHub. La portada ya no mostrará el aviso de "Modo prueba".
+
+**Sobre la privacidad:** las reglas anteriores permiten que cualquiera que conozca el código de una sala lea y escriba en ella. Para un juego está bien: solo se guardan nombres de equipos, puntos y mensajes del juego. Después del evento puedes borrar los datos desde la consola de Firebase. El plan gratuito alcanza de sobra para varias partidas.
 
 ---
 
 ## 🗺️ Estructura (~45 min)
 
-| Momento | Duración | Qué pasa |
-|---|---|---|
-| Historia animada + sospechosos + reglas | 4–5′ | Escenas animadas: la ciudad, el robo del Cristal y los 6 sospechosos |
-| ⚡ **Plaza Azul** · *Feed Frenético* | 7′ | Las publicaciones llegan a toda velocidad. Se moderan con las flechas: **← REMOVE**, **↓ MARK AS DISTURBING**, **→ NO VIOLATION**. Los aciertos seguidos suman combo. 45 s por equipo. *Bonus opcional: Tabú de Políticas* |
-| 🎣 **Puerto Verde** · *Caza de Anzuelos* | 6′ | Los mensajes flotan en el mar. Hay que tocar **solo las estafas**: tocar un mensaje real resta puntos. 30 s por equipo |
-| ⚖️ **Isla Gradiente** · *El Consejo* | 10′ | Un equipo defiende **NO VIOLATION** y otro **REMOVE**. El **aplausómetro** escucha al público por el micrófono y decide quién convenció más. Luego se revela la decisión correcta |
-| 🔗 **Torre Espiral** · *Rompe la Cadena* | 7′ | Un rumor salta de usuario en usuario por una red animada. Hay que verificar usuarios con energía limitada para frenarlo. 30 s por equipo. *Bonus opcional: Teléfono Viral* |
-| 🔦 **Nebulosa Horizon** · *Escáner de Privacidad* | 7′ | Con una linterna se recorre un perfil oculto para encontrar los datos expuestos. Después, todos los equipos compiten por abrir la bóveda adivinando la contraseña |
-| 🤝 Mercado de Pistas + ⚖️ Acusación + 🎭 Revelación | 5–6′ | Negociar pistas (¡o mentir!), acusar en secreto y revelar al culpable (+500 ❤️) |
-
-> 🎤 **Aplausómetro:** el navegador pedirá permiso para usar el micrófono. Si no hay micrófono o no se da el permiso, la persona moderadora elige al ganador con dos botones.
-
-## 🔒 La mecánica del misterio
-
-- Al empezar, el juego elige **al azar** al culpable entre los 6 sospechosos. Cada partida es distinta y nadie, ni el moderador, sabe quién es.
-- Cada misión entrega **1 pista secreta** al equipo con más corazones en esa misión. Si hay empate, el moderador puede elegir varios equipos.
-- Al entregar la pista, el juego pide que **todos se den vuelta 🙈** menos el equipo ganador. La pista aparece 20 segundos y luego se "quema".
-- Cada pista descarta a un inocente. Se refiere a su **accesorio, coartada, manía o color de ropa**, así que hay que leer bien las fichas de los sospechosos.
-- Con las 5 pistas solo queda un sospechoso posible. Como cada equipo tiene solo algunas, en el **Mercado de Pistas** deben compartir, intercambiar, vender por corazones... o **mentir**. Esto conecta con la reflexión final: *verifica tus fuentes*.
-- Acusar correctamente da **+500 ❤️**.
+| Momento | Duración |
+|---|---|
+| Registro de equipos + historia en cómic + sospechosos + reglas | 6′ |
+| Feed Frenético (60 s de juego) | 4′ |
+| Caza de Anzuelos (45 s de juego) | 4′ |
+| El Consejo (2 o 3 casos) | 9′ |
+| Rompe la Cadena (+ bonus opcional: Teléfono en cadena) | 4–8′ |
+| Escáner de Privacidad + bóveda | 6′ |
+| Mercado de Pistas (4 min) + acusación + revelación + podio | 8′ |
 
 ---
 
-## 🎛️ Consejos para la persona moderadora
+## 📚 Las 18 políticas
 
-- **Puntos:** toca la ficha de cualquier equipo en la barra inferior para sumar o restar corazones a mano (bonos, penalizaciones, ventas de pistas).
-- **Temporizadores:** todos tienen ⏯ pausa, **+15s** y ⏭ terminar ya. En los minijuegos, el botón ⏭ de la esquina termina el turno.
-- **Teclado:** la barra espaciadora o Enter avanzan las pantallas de "¡Jugar!" y de la historia.
-- **🕵️ Sospechosos** (barra superior): abre la rueda de sospechosos en cualquier momento. Con ✕ se descartan sospechosos en pantalla.
-- **☰ Menú:** ir al mapa, ver reglas, imprimir la hoja del detective, saltar al Mercado (si se acaba el tiempo) o empezar una nueva partida.
-- **Si hay poco tiempo:** en el Consejo jueguen 2 casos en vez de 3, y omitan las rondas bonus.
-- **Si sobra tiempo:** jueguen las rondas bonus (Tabú de Políticas y Teléfono Viral).
-- **Decisiones:** si tu equipo usa otros nombres (por ejemplo, DELETE o IGNORE), cámbialos en `DECISIONS`, en `js/data.js`.
-- Cierren con la pantalla final de los **5 valores** e inviten a comentar: *¿qué fue lo que más les sorprendió?*
+Cada misión desbloquea las de su distrito en el **Archivo de Políticas**:
+
+| Distrito | Políticas |
+|---|---|
+| Plaza Azul | Hateful Conduct · Violence and Incitement · Dangerous Organizations and Individuals · Coordinating Harm and Promoting Crime |
+| Puerto Verde | Cybersecurity · Prohibited Commercial Practices · Restricted Goods and Services · Human Exploitation 🛡️ |
+| Isla Gradiente | Bullying and Harassment · Violent and Graphic Content · Suicide, Self-Injury, and Eating Disorders 🛡️ · Adult Nudity and Sexual Activity 🛡️ · Adult Sexual Solicitation and Sexually Explicit Language 🛡️ |
+| Torre Espiral | Misinformation · Spam |
+| Nebulosa Horizon | Privacy Violations · Adult Sexual Exploitation 🛡️ · Child Sexual Exploitation, Abuse, and Nudity 🛡️ |
+
+🛡️ **Protección especial:** por respeto, estas políticas **no se juegan**. Aparecen en el Archivo con una explicación seria. Es un buen momento para que la persona moderadora haga una pausa y las comente.
 
 ---
 
-## 🛠️ Personalizar el contenido
+## 🛠️ Personalizar
 
-Todo el contenido está en **`js/data.js`**: las 18 políticas (`POLICIES`), las decisiones (`DECISIONS`), las publicaciones del Feed (`FEED_POSTS`), los mensajes del mar (`SEA_MSGS`), sospechosos, cartas de Tabú, casos del Consejo, noticias del Teléfono Viral, el perfil de Toño Turbo y las lecciones. Se puede editar con cualquier editor de texto, sin programar.
+Todo el contenido está en **`js/data.js`**:
+- las 18 políticas (`POLICIES`);
+- las decisiones (`DECISIONS`): si tu equipo usa otros nombres, como DELETE o IGNORE, se cambian aquí;
+- las publicaciones del Feed (`FEED_POSTS`) y los mensajes del mar (`SEA_MSGS`);
+- los casos del Consejo (`COUNCIL_CASES`) y las noticias del teléfono (`PHONE_MESSAGES`);
+- sospechosos, insignias (`BADGES`) y lecciones.
 
 ```
-index.html        → estructura de la página
-css/styles.css    → diseño visual
-js/data.js        → TODO el contenido del juego (edítalo aquí)
-js/art.js         → ilustraciones SVG (personajes, islas, cristal)
-js/games.js       → los minijuegos arcade
-js/app.js         → lógica del juego
+index.html          → estructura de la página
+css/styles.css      → estilo cómic noir
+js/config.js        → configuración de Firebase
+js/data.js          → TODO el contenido del juego
+js/net.js           → sincronización en red (Firebase o modo prueba)
+js/games.js         → minijuegos arcade
+js/art.js           → ilustraciones SVG (sospechosos y cristal)
+js/icons.js         → íconos de game-icons.net
+js/app.js           → flujo del juego (moderador y equipos)
+vendor/             → Firebase y generador de códigos QR
 ```
 
 ---
+
+## 🙏 Créditos
+
+- Íconos: [game-icons.net](https://game-icons.net) (Lorc, Delapouite y colaboradores), licencia **CC BY 3.0**.
+- Tipografías: Bangers, Special Elite, Permanent Marker y Barlow (Google Fonts, licencia OFL).
+- Firebase JS SDK (Apache 2.0) y qrcode-generator (MIT).
+- Ideas de diseño inspiradas en *Papers, Please*, *Moderator Mayhem* (Techdirt/Engine), *Quiplash* (Jackbox), *Gartic Phone*, *Bad News* (Universidad de Cambridge) y *Shadows of Doubt*.
 
 ## ⚠️ Aviso
 
-Juego educativo de ficción. Nexópolis, sus personajes y sus casos son inventados, y no usa logotipos oficiales.
-Las explicaciones de políticas son simplificaciones de las **Normas Comunitarias públicas de Meta**. Para la versión oficial y actualizada, consulta el **Centro de Transparencia de Meta**: <https://transparency.meta.com>.
+Juego educativo de ficción. Nexópolis, sus personajes y sus casos son inventados, y no se usan logotipos oficiales. Las explicaciones son simplificaciones de las **Normas Comunitarias públicas de Meta**. Para la versión oficial y actualizada, consulta el **Centro de Transparencia de Meta**: <https://transparency.meta.com>.
