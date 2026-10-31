@@ -196,6 +196,12 @@
     root.onclick = e => { if (e.target === root || e.target.closest('[data-close]')) closeModal(); };
     return root.firstElementChild;
   }
+  function ask(msg, onYes, yesLabel = 'Sí, continuar') {
+    const m = modal(`<h2 class="h-md">🤔 ${msg}</h2><div class="row center mt"><button class="btn ghost" data-close>Cancelar</button><button class="btn pink" id="yes">${yesLabel}</button></div>`, { small: true });
+    $('#yes', m).onclick = () => { closeModal(); onYes(); };
+  }
+  const EMBEDDED = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+  const printBtn = (id, cls = 'btn ghost') => EMBEDDED ? '' : `<button class="${cls}" id="${id}">🖨️ Imprimir hoja del detective</button>`;
   const closeModal = () => { const r = $('#modal-root'); r.classList.remove('open'); r.innerHTML = ''; };
 
   function pickTeam(title, cb, { none = true, sub = '' } = {}) {
@@ -301,8 +307,8 @@
   function openSuspects() {
     const m = modal(`<div class="kicker">Expediente</div><h2 class="h-lg">🕵️ Los 6 sospechosos</h2>
       <p class="muted">Toquen una carta para ver su ficha. Usen ✕ para descartar sospechosos.</p><div class="mt">${lineupHTML({ cross: true })}</div>
-      <div class="row center mt"><button class="btn sm ghost" id="pr">🖨️ Imprimir hoja del detective</button></div>`);
-    bindLineup(m); $('#pr', m).onclick = printSheet;
+      <div class="row center mt">${printBtn('pr', 'btn sm ghost')}</div>`);
+    bindLineup(m); const pr = $('#pr', m); if (pr) pr.onclick = printSheet;
   }
   function printSheet() {
     $('#print-sheet').innerHTML = `<div class="ps-title">🕵️ Hoja del Detective — El Caso del Cristal Robado</div>
@@ -341,7 +347,7 @@
       <button class="btn ghost" data-m="sus">🕵️ Ver sospechosos</button>
       <button class="btn ghost" data-m="codex">📚 Archivo de políticas</button>
       <button class="btn ghost" data-m="rules">📜 Ver reglas</button>
-      <button class="btn ghost" data-m="print">🖨️ Imprimir hoja del detective</button>
+      ${EMBEDDED ? '' : '<button class="btn ghost" data-m="print">🖨️ Imprimir hoja del detective</button>'}
       <button class="btn ghost" data-m="market">⏩ Saltar al Mercado de Pistas</button>
       <button class="btn ghost" data-m="fs">⛶ Pantalla completa</button>
       <button class="btn red" data-m="reset">🔄 Nueva partida (borra el progreso)</button></div>`, { small: true });
@@ -354,7 +360,7 @@
       if (a === 'print') printSheet();
       if (a === 'market') started() ? go('market') : toast('Primero creen la partida 🙂');
       if (a === 'fs') toggleFS();
-      if (a === 'reset' && confirm('¿Seguro? Se perderán los puntos y las pistas.')) { S = fresh(S.teams); save(); go('title'); }
+      if (a === 'reset') ask('¿Empezar una nueva partida? Se perderán los puntos y las pistas.', () => { S = fresh(S.teams); save(); go('title'); }, 'Sí, nueva partida');
     }));
   }
   const toggleFS = () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); };
@@ -466,11 +472,11 @@
         <h1 class="h-xl">Seis sospechosos. <span class="warm-text">Un culpable.</span></h1>
         <p class="muted h-md mt-s">Todos estaban en Nexópolis anoche a las 23:00. Lean bien sus fichas: <b>cada detalle puede ser una pista</b>.</p></div>
       <div class="mt">${lineupHTML()}</div>
-      <div class="row center mt"><button class="btn ghost" id="all">🔄 Voltear todas</button><button class="btn ghost" id="pr">🖨️ Imprimir hoja del detective</button>
+      <div class="row center mt"><button class="btn ghost" id="all">🔄 Voltear todas</button>${printBtn('pr')}
         <button class="btn pink big" id="nx">¿Cómo se gana? ➜</button></div>`, { scores: false });
     bindLineup(root);
     $('#all', root).onclick = () => { $$('.suspect', root).forEach(s => s.classList.toggle('flipped')); sfx.whoosh(); };
-    $('#pr', root).onclick = printSheet;
+    const pr = $('#pr', root); if (pr) pr.onclick = printSheet;
     $('#nx', root).onclick = () => go('rules');
   };
 
@@ -522,7 +528,7 @@
       </div>`);
     $$('.isl', root).forEach(g => (g.onclick = () => {
       const d = district(g.dataset.id);
-      if (S.done.includes(d.id) && !confirm(`"${d.mission}" ya está completada. ¿Jugarla otra vez? (No da una pista nueva)`)) return;
+      if (S.done.includes(d.id)) return ask(`"${d.mission}" ya está completada. ¿Jugarla otra vez? (No da una pista nueva)`, () => fly(root, d), 'Jugar otra vez');
       fly(root, d);
     }));
     $('.map-center', root).onclick = () => (allDone ? go('market') : toast(`💎 Fragmentos recuperados: ${S.done.length} de 5`));
@@ -1082,7 +1088,7 @@
     };
     $('#try', root).onclick = tryIt;
     pw.onkeydown = e => { if (e.key === 'Enter') tryIt(); };
-    $('#give', root).onclick = () => confirm('¿Revelar la contraseña?') && open();
+    $('#give', root).onclick = () => ask('¿Revelar la contraseña sin que nadie la adivine?', open, 'Revelar');
   }
 
   /* ---------- Fin de misión + pista secreta ---------- */
@@ -1219,7 +1225,7 @@
     $('#bk', root).onclick = () => go('market');
     $('#go', root).onclick = () => {
       const missing = S.teams.filter(t => !S.accus[t.id]);
-      if (missing.length && !confirm(`${missing.map(t => t.name).join(', ')} aún no acusa. ¿Revelar de todos modos?`)) return;
+      if (missing.length) return ask(`${missing.map(t => esc(t.name)).join(', ')} aún no acusa. ¿Revelar de todos modos?`, () => go('reveal'), 'Revelar');
       go('reveal');
     };
   };
