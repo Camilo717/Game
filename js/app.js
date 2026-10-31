@@ -13,6 +13,8 @@
   const suspect = id => SUSPECTS.find(s => s.id === id);
   const district = id => DISTRICTS.find(d => d.id === id);
   const team = id => S.teams.find(t => t.id === id);
+  const policy = id => POLICIES.find(p => p.id === id);
+  const polChips = ids => `<div class="pol-chips">${ids.map(policy).map(p => `<span class="pol-chip" title="${p.es}">${p.icon} ${p.en}</span>`).join('')}</div>`;
   const fmt = s => { s = Math.max(0, Math.round(s)); return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : `${s}`; };
   const focus = el => el && setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
   const later = (fn, ms) => { const h = setTimeout(fn, ms); timers.push({ stop: () => clearTimeout(h) }); };
@@ -224,6 +226,7 @@
   function renderTop() {
     $('#facets').innerHTML = DISTRICTS.map(d => `<i class="${S.done.includes(d.id) ? 'on' : ''}" style="${S.done.includes(d.id) ? `background:${d.color};color:${d.color}` : ''}" title="${d.value}"></i>`).join('');
     $('#snd').textContent = S.sound ? '🔊' : '🔇';
+    $('#btn-codex').innerHTML = `📚 Políticas <b>${unlockedCount()}/${POLICIES.length}</b>`;
   }
   setInterval(() => {
     const el = $('#clock'); if (!el) return;
@@ -267,7 +270,8 @@
             <div class="trait"><small>Accesorio</small>${cap(s.accessory)}</div>
             <div class="trait"><small>Coartada · 23:00</small>Dice que estaba ${s.alibi}</div>
             <div class="trait"><small>Manía</small>${cap(s.habit)}</div>
-            <div class="trait"><small>Posible motivo</small>${s.motive}</div></div>
+            <div class="trait"><small>Posible motivo</small>${s.motive}</div>
+            <div class="trait"><small>Políticas que suele romper</small>${s.policies.map(id => policy(id).en).join(' · ')}</div></div>
         </div>
         ${cross ? `<button class="cross-btn" data-cross="${s.id}" title="Descartar / restaurar">✕</button>` : ''}
       </div>`).join('')}</div>`;
@@ -293,17 +297,38 @@
     $('#print-sheet').innerHTML = `<div class="ps-title">🕵️ Hoja del Detective — El Caso del Cristal Robado</div>
       <p style="text-align:center">Equipo: ______________________________</p>
       <div class="ps-grid">${SUSPECTS.map(s => `<div class="ps-card">${Art.avatar(s)}<h3><span class="ps-box"></span>${s.name}</h3>
-        <p><b>Color:</b> ${s.colorName}</p><p><b>Accesorio:</b> ${s.accessory}</p><p><b>Coartada:</b> ${s.alibi}</p><p><b>Manía:</b> ${s.habit}</p></div>`).join('')}</div>
+        <p><b>Color:</b> ${s.colorName}</p><p><b>Accesorio:</b> ${s.accessory}</p><p><b>Coartada:</b> ${s.alibi}</p><p><b>Manía:</b> ${s.habit}</p><p><b>Políticas:</b> ${s.policies.map(id => policy(id).en).join(', ')}</p></div>`).join('')}</div>
       <h3 style="margin-top:12pt">Nuestras pistas</h3><div class="ps-clues">${[1, 2, 3, 4, 5].map(i => `<div>${i}.</div>`).join('')}</div>
       <h3 style="margin-top:14pt">Nuestra acusación: ______________________________</h3>`;
     window.print();
   }
+
+  /* ================= Archivo de Políticas ================= */
+  function polCard(p, locked, delay = 0) {
+    const d = district(p.district);
+    return `<div class="pol-card ${locked ? 'locked' : ''} ${p.sensitive ? 'sensitive' : ''}" style="--pc:${d.color};animation-delay:${delay}s">
+      <div class="pi">${locked ? '🔒' : p.icon}</div><div class="pen">${p.en}</div><div class="pes">${p.es}</div>
+      ${locked ? `<div class="pd muted">Se desbloquea en ${d.icon} ${d.name}</div>` : `<div class="pd">${p.desc}</div>`}
+      ${p.sensitive && !locked ? '<div class="psens">🛡️ Protección especial</div>' : ''}</div>`;
+  }
+  const unlockedCount = () => POLICIES.filter(p => S.done.includes(p.district)).length;
+  function openCodex(showAll = false) {
+    const m = modal(`<div class="kicker">Normas Comunitarias de Meta</div>
+      <h2 class="h-lg">📚 Archivo de Políticas <span class="pill">${unlockedCount()} / ${POLICIES.length} desbloqueadas</span></h2>
+      <p class="muted">Cada misión completada desbloquea las políticas de su distrito. Las marcadas con 🛡️ son de <b>protección especial</b>: no se juegan, pero es clave conocerlas.</p>
+      ${DISTRICTS.map(d => `<h3 class="h-md mt" style="color:${d.color}">${d.icon} ${d.name} · ${d.value}</h3>
+        <div class="codex mt-s">${POLICIES.filter(p => p.district === d.id).map(p => polCard(p, !showAll && !S.done.includes(d.id))).join('')}</div>`).join('')}
+      ${showAll ? '' : '<div class="row center mt"><button class="btn sm ghost" id="all">👁️ Mostrar todas (moderador)</button></div>'}`);
+    const a = $('#all', m); if (a) a.onclick = () => openCodex(true);
+  }
+  $('#btn-codex').onclick = () => openCodex();
 
   /* ================= Menú ================= */
   function openMenu() {
     const m = modal(`<h2 class="h-md">☰ Menú del moderador</h2><div class="menu-list">
       <button class="btn ghost" data-m="map">🗺️ Ir al mapa</button>
       <button class="btn ghost" data-m="sus">🕵️ Ver sospechosos</button>
+      <button class="btn ghost" data-m="codex">📚 Archivo de políticas</button>
       <button class="btn ghost" data-m="rules">📜 Ver reglas</button>
       <button class="btn ghost" data-m="print">🖨️ Imprimir hoja del detective</button>
       <button class="btn ghost" data-m="market">⏩ Saltar al Mercado de Pistas</button>
@@ -313,6 +338,7 @@
       const a = b.dataset.m; closeModal();
       if (a === 'map') started() ? go('map') : toast('Primero creen la partida 🙂');
       if (a === 'sus') openSuspects();
+      if (a === 'codex') openCodex();
       if (a === 'rules') go('rules');
       if (a === 'print') printSheet();
       if (a === 'market') started() ? go('market') : toast('Primero creen la partida 🙂');
@@ -443,7 +469,7 @@
     const root = view(`
       <div class="center"><div class="kicker">Paso 3 de 3 · Cómo se juega</div><h1 class="h-xl">Las reglas de la <span class="grad-text">Liga</span></h1></div>
       <div class="rules-grid mt">
-        <div class="glass rule-card"><span class="ic">❤️</span><h3>Ganen Likes</h3><p>Cada distrito tiene un desafío distinto: hablar, cazar, debatir, susurrar, hackear. Cada logro suma <b>Likes</b>.</p></div>
+        <div class="glass rule-card"><span class="ic">❤️</span><h3>Ganen Likes</h3><p>Cada distrito tiene un desafío distinto: hablar, cazar, debatir, susurrar, hackear. Cada logro suma <b>Likes</b> y desbloquea <b>políticas</b> en el 📚 Archivo.</p></div>
         <div class="glass rule-card"><span class="ic" style="animation-delay:-1s">🔒</span><h3>Pistas secretas</h3><p>El equipo con más Likes en cada misión recibe una <b>pista secreta</b> sobre el culpable. Los demás... ¡de espaldas!</p></div>
         <div class="glass rule-card"><span class="ic" style="animation-delay:-2s">🕵️</span><h3>Acusen</h3><p>Al final, en el <b>Mercado de Pistas</b> pueden compartir, negociar... o mentir. Acertar al culpable da <b>+300 Likes</b>.</p></div>
       </div>
@@ -574,7 +600,7 @@
         </div>`);
       const paint = () => {
         $('#cardbox', root).innerHTML = `<div class="taboo-card"><div class="kicker" style="color:#bfdbfe">Expliquen sin decir...</div>
-          <div class="word">${card.word}</div><div class="bn-title">🚫 PALABRAS PROHIBIDAS</div>
+          <div class="word">${card.word}</div>${card.policy ? `<div class="pol-en">${policy(card.policy).en}</div>` : ''}<div class="bn-title">🚫 PALABRAS PROHIBIDAS</div>
           <div class="banned">${card.banned.map(b => `<span>${b}</span>`).join('')}</div></div>`;
         $('#cnt', root).textContent = `✅ ${played.filter(p => p.r === 'ok').length}`;
       };
@@ -624,7 +650,7 @@
               <div class="hdr" style="padding:10px 12px"><div style="flex:1;background:rgba(255,255,255,.08);border-radius:20px;padding:8px 14px;opacity:.6;font-size:.85em">Mensaje</div><span>🎤</span></div>
             </div></div>
           <div class="col">
-            <div class="row"><div><div class="kicker">Chat ${si + 1} de ${SCAM_SCENARIOS.length} · ${sc.app}</div><h2 class="h-lg">${sc.title}</h2></div>
+            <div class="row"><div><div class="kicker">Chat ${si + 1} de ${SCAM_SCENARIOS.length} · ${sc.app}</div><h2 class="h-lg">${sc.title}</h2>${polChips(sc.policies)}</div>
               <div class="top-spacer"></div><div id="tm"></div></div>
             <div class="glass" style="padding:18px"><div class="row"><span class="counter-big"><span id="fc">0</span>/${total}</span>
               <span class="h-md">anzuelos encontrados 🎣</span></div>
@@ -662,7 +688,7 @@
         ['🚩', 'Reporta y bloquea', 'Ayudas a proteger a toda la comunidad, no solo a ti.'],
       ];
       const root = mview(d, `
-        <div class="center"><h2 class="h-lg">🛡️ El escudo anti-anzuelos</h2><p class="muted h-md">Cinco reflejos que la Capitana Phishy odia</p></div>
+        <div class="center"><h2 class="h-lg">🛡️ El escudo anti-anzuelos</h2><p class="muted h-md">Cinco reflejos que la Capitana Phishy odia</p><div class="row center">${polChips(['cyber', 'spam'])}</div></div>
         <div class="lessons mt">${tips.map((t, i) => `<div style="--c:${['#25d366', '#22d3ee', '#ffd23f', '#a78bfa', '#ff4fa3'][i]}"><div style="font-size:2.4em">${t[0]}</div><h4>${t[1]}</h4>${t[2]}</div>`).join('')}</div>
         <div class="row center mt">${finishBtn('🏁 Ver resultados de la misión')}</div>`);
       $('#fin', root).onclick = () => finishMission(d.id);
@@ -750,7 +776,8 @@
         verdict() {
           hl(null); sfx.stamp(); confetti(60);
           ph.innerHTML = `<div class="center"><div class="kicker">¿Qué dicen las Normas Comunitarias?</div>
-            <div class="mt-s"><span class="stamp ${c.verdict}">${c.verdictLabel}</span></div></div>
+            <div class="mt-s"><span class="stamp ${c.verdict}">${c.verdictLabel}</span></div>
+            <div class="row center mt-s">${polChips(c.policies)}</div></div>
             <p class="mt" style="font-size:1.1em;line-height:1.45">${c.explain}</p>
             ${council.length ? `<p class="muted">¿Qué equipos del Consejo votaron como dice la norma? (+50 ❤️ cada uno)</p>
               <div class="row">${council.map(t => `<button class="opt" style="--tc:${t.color}" data-t="${t.id}">${t.emoji} ${esc(t.name)}</button>`).join('')}</div>` : ''}
@@ -823,7 +850,7 @@
         <div class="score-rows mt-s">${S.teams.map(t => `<div class="score-row" style="--tc:${t.color}"><div class="tn">${t.emoji} ${esc(t.name)}</div>
           <div class="opts">${opts.map(([l, p]) => `<button class="opt" data-t="${t.id}" data-p="${p}">${l} +${p}</button>`).join('')}</div></div>`).join('')}</div>
         <div class="glass mt"><div class="row" style="align-items:flex-start">
-          <div style="flex:1.2;min-width:300px"><h3 class="h-md">🔥 Lo falso corre más rápido</h3>
+          <div style="flex:1.2;min-width:300px"><h3 class="h-md">🔥 Lo falso corre más rápido</h3>${polChips(['misinfo', 'spam'])}
             <p>Un estudio del MIT publicado en <i>Science</i> (2018) encontró que en redes sociales las noticias falsas llegaban a más personas y más rápido que las verdaderas.
             Cada vez que alguien comparte sin verificar, el mensaje cambia un poquito... como acaban de vivir.</p>
             <p><b>Antes de compartir:</b> ⏸️ haz una pausa · 🔎 busca la fuente original y la fecha · 🏷️ fíjate en las etiquetas de contexto (verificación, Notas de la Comunidad, "Reenviado muchas veces") · 😱 si te genera una emoción extrema, sospecha.</p></div>
@@ -963,7 +990,7 @@
         ['✈️', 'Publica después', 'Comparte el viaje cuando vuelvas, no mientras tu casa está sola.'],
       ];
       const root = mview(d, `
-        <div class="center"><h2 class="h-lg">🛡️ Escudo de privacidad</h2><p class="muted h-md">Lo que Toño Turbo debió hacer</p></div>
+        <div class="center"><h2 class="h-lg">🛡️ Escudo de privacidad</h2><p class="muted h-md">Lo que Toño Turbo debió hacer</p><div class="row center">${polChips(['privacy'])}</div></div>
         <div class="lessons mt">${tips.map((t, i) => `<div style="--c:${['#a78bfa', '#22d3ee', '#ffd23f', '#25d366', '#ff4fa3'][i]}"><div style="font-size:2.4em">${t[0]}</div><h4>${t[1]}</h4>${t[2]}</div>`).join('')}</div>
         <div class="row center mt">${finishBtn('🏁 Ver resultados de la misión')}</div>`);
       $('#fin', root).onclick = () => finishMission(d.id);
@@ -1048,10 +1075,12 @@
     const all = S.done.length === DISTRICTS.length;
     const root = mview(d, `
       <div class="facet-restore">
-        <h2 class="h-xl">✅ ¡Ya pueden voltearse!</h2>
-        <div class="mt">${Art.crystal(S.done, 240)}</div>
-        <p class="h-md">Cristal restaurado: <b>${S.done.length} / ${DISTRICTS.length}</b></p>
+        <div class="row center" style="gap:30px"><div>${Art.crystal(S.done, 150)}</div>
+          <div style="text-align:left"><h2 class="h-xl">✅ ¡Ya pueden voltearse!</h2>
+          <p class="h-md">Cristal restaurado: <b>${S.done.length} / ${DISTRICTS.length}</b></p></div></div>
         <div class="lesson-box"><b style="color:${d.color}">${LESSONS[d.id].value}:</b> ${LESSONS[d.id].text}</div>
+        <h3 class="h-md mt">📚 Nuevas políticas en su Archivo <span class="pill">${unlockedCount()} / ${POLICIES.length}</span></h3>
+        <div class="codex unlock mt-s">${POLICIES.filter(p => p.district === d.id).map((p, i) => polCard(p, false, .3 + i * .25)).join('')}</div>
         <div class="row center mt">${all ? '<button class="btn big pink pulse" id="nx">🕵️ ¡Cristal completo! Al Mercado de Pistas</button>' : '<button class="btn big pink" id="nx">🗺️ Volver al mapa</button>'}</div>
       </div>`);
     $('#nx', root).onclick = () => go(all ? 'market' : 'map');
@@ -1167,10 +1196,14 @@
       ${ranked.length > 3 ? `<div class="row center mt">${ranked.slice(3).map((t, i) => `<span class="pill" style="border-color:${t.color}">${i + 4}. ${t.emoji} ${esc(t.name)} · ${t.score} ❤️</span>`).join('')}</div>` : ''}
       <div class="glass mt-l"><h3 class="h-md center">💎 Los 5 valores que hoy defendimos</h3>
         <div class="lessons mt">${DISTRICTS.map(d => `<div style="--c:${d.color}"><h4>${d.icon} ${LESSONS[d.id].value}</h4>${LESSONS[d.id].text}</div>`).join('')}</div></div>
+      <div class="glass mt"><h3 class="h-md center">📚 Las ${POLICIES.length} políticas que protegen a Nexópolis</h3>
+        <div class="final-pols mt">${DISTRICTS.map(d => `<div style="--c:${d.color}"><h4>${d.icon} ${d.name}</h4>${polChips(POLICIES.filter(p => p.district === d.id).map(p => p.id))}</div>`).join('')}</div>
+        <div class="row center mt"><button class="btn sm ghost" id="cx">📚 Abrir el Archivo completo</button></div></div>
       <div class="row center mt"><button class="btn ghost" id="home">🏠 Inicio</button><button class="btn pink" id="again">🔄 Nueva partida</button></div>
       <p class="disclaimer">Para conocer las políticas oficiales y actualizadas visita el Centro de Transparencia de Meta: transparency.meta.com</p>`, { scores: false });
     sfx.fanfare();
     [0, 700, 1400].forEach(t => later(() => confetti(150, innerWidth * (.25 + Math.random() * .5), innerHeight * .3), t));
+    $('#cx', root).onclick = () => openCodex(true);
     $('#home', root).onclick = () => go('title');
     $('#again', root).onclick = () => { S = fresh(S.teams); save(); go('setup'); };
   };

@@ -11,6 +11,22 @@ No es un quiz: los equipos **hablan, cazan, debaten, susurran, hackean, negocian
 
 ---
 
+## 📚 Las 18 políticas de las Normas Comunitarias
+
+El juego está alineado con las 18 políticas de las Normas Comunitarias de Meta. Cada misión desbloquea las de su distrito en el **📚 Archivo de Políticas** (botón en la barra superior):
+
+| Distrito / misión | Políticas que desbloquea | Dónde aparecen en el juego |
+|---|---|---|
+| 💬 Plaza Azul · Tabú | Hateful Conduct · Violence and Incitement · Dangerous Organizations and Individuals · Coordinating Harm and Promoting Crime | Cartas de Tabú, casos del Consejo (*spoiler*, *hincha furioso*, *grupo armado*) |
+| 🎣 Puerto Verde · Anzuelos | Cybersecurity · Prohibited Commercial Practices · Restricted Goods and Services · Human Exploitation 🛡️ | Chats de phishing, casos *farmacia del DM* y *oferta de trabajo soñada*, sospechosos |
+| ⚖️ Isla Gradiente · Consejo | Bullying and Harassment · Violent and Graphic Content · Suicide, Self-Injury, and Eating Disorders 🛡️ · Adult Nudity and Sexual Activity 🛡️ · Adult Sexual Solicitation and Sexually Explicit Language 🛡️ | Casos *papa presidencial*, *captura expuesta*, *video de la protesta* |
+| 📡 Torre Espiral · Teléfono Viral | Misinformation · Spam | Teléfono viral, caso *té milagroso*, cadenas de WhatsApp |
+| 🔐 Nebulosa Horizon · Contraseña | Privacy Violations · Adult Sexual Exploitation 🛡️ · Child Sexual Exploitation, Abuse, and Nudity 🛡️ | Auditoría de privacidad, casos con datos personales |
+
+🛡️ **Políticas de protección especial**: por respeto, estas **no se juegan** (no hay cartas de Tabú ni casos de debate sobre ellas). Aparecen en el Archivo con una explicación clara y seria. Es un buen momento para que la persona moderadora haga una pausa y las comente.
+
+---
+
 ## ▶️ Cómo abrirlo
 
 1. Descarga o clona este repositorio.
@@ -75,7 +91,7 @@ Las misiones se pueden jugar en cualquier orden. El reloj de la barra superior m
 
 ## 🛠️ Personalizar el contenido
 
-Todo el contenido está en **`js/data.js`**: sospechosos, cartas de Tabú, chats de estafa, casos del Consejo, noticias del Teléfono Viral, el perfil de Toño Turbo y las lecciones. Se puede editar con cualquier editor de texto, sin programar.
+Todo el contenido está en **`js/data.js`**: las 18 políticas (`POLICIES`), sospechosos, cartas de Tabú, chats de estafa, casos del Consejo, noticias del Teléfono Viral, el perfil de Toño Turbo y las lecciones. Se puede editar con cualquier editor de texto, sin programar.
 
 ```
 index.html        → estructura de la página
