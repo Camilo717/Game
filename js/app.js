@@ -62,6 +62,8 @@
   }
   const sfx = {
     click: () => tone(700, .07, 'triangle', .07),
+    pop: (c = 1) => { const f = 520 * Math.pow(1.06, Math.min(12, c)); tone(f, .09, 'triangle', .12); tone(f * 1.5, .12, 'sine', .08, .05); },
+    err: () => tone(150, .2, 'square', .08, 0, 90),
     good: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .2, 'triangle', .12, i * .07)),
     bad: () => { tone(260, .25, 'sawtooth', .08, 0, 140); tone(180, .35, 'sawtooth', .08, .14, 90); },
     tick: () => tone(1300, .05, 'square', .04),
@@ -136,6 +138,15 @@
   /* ================= Temporizador ================= */
   let timers = [];
   const clearTimers = () => { timers.forEach(t => t.stop()); timers = []; };
+  function onKeys(map) {
+    const h = e => {
+      const f = map[e.key];
+      if (!f || $('#modal-root').classList.contains('open') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+      e.preventDefault(); f();
+    };
+    document.addEventListener('keydown', h);
+    timers.push({ stop: () => document.removeEventListener('keydown', h) });
+  }
 
   function makeTimer(el, secs, { onEnd, size = 170, autostart = true, ticks = true } = {}) {
     let left = secs, total = secs, iv = null, ended = false;
@@ -217,7 +228,7 @@
   }
   function editScore(tid) {
     const t = team(tid);
-    const m = modal(`<h2 class="h-md">${t.emoji} ${esc(t.name)}</h2><p class="muted">Ajuste manual de Likes (bonos, penalizaciones, ventas de pistas...)</p>
+    const m = modal(`<h2 class="h-md">${t.emoji} ${esc(t.name)}</h2><p class="muted">Ajuste manual de corazones (bonos, penalizaciones, ventas de pistas...)</p>
       <div class="counter-big center mt-s" id="es">${t.score} ❤️</div>
       <div class="row center mt">${[-100, -50, -10, 10, 50, 100].map(v => `<button class="btn sm ${v < 0 ? 'red' : 'green'}" data-v="${v}">${v > 0 ? '+' : ''}${v}</button>`).join('')}</div>`, { small: true });
     $$('[data-v]', m).forEach(b => (b.onclick = () => { award(tid, +b.dataset.v); $('#es', m).textContent = `${t.score} ❤️`; }));
@@ -307,7 +318,7 @@
   function polCard(p, locked, delay = 0) {
     const d = district(p.district);
     return `<div class="pol-card ${locked ? 'locked' : ''} ${p.sensitive ? 'sensitive' : ''}" style="--pc:${d.color};animation-delay:${delay}s">
-      <div class="pi">${locked ? '🔒' : p.icon}</div><div class="pen">${p.en}</div><div class="pes">${p.es}</div>
+      <div class="pi">${locked ? '🔒' : p.icon}</div><div class="pen">${p.en}</div>
       ${locked ? `<div class="pd muted">Se desbloquea en ${d.icon} ${d.name}</div>` : `<div class="pd">${p.desc}</div>`}
       ${p.sensitive && !locked ? '<div class="psens">🛡️ Protección especial</div>' : ''}</div>`;
   }
@@ -410,43 +421,42 @@
     draw();
   };
 
-  /* ---------- Historia ---------- */
-  const STORY = [
-    'Bienvenidos a Nexópolis, la ciudad flotante donde viven miles de millones de conversaciones. Cinco distritos la mantienen unida: la Plaza Azul, el Puerto Verde, la Isla Gradiente, la Torre Espiral y la Nebulosa Horizon.',
-    'En el centro de la ciudad brillaba el Cristal de la Confianza. Sus cinco caras representan los valores que protegen a la comunidad: VOZ, SEGURIDAD, DIGNIDAD, AUTENTICIDAD y PRIVACIDAD.',
-    'Pero anoche, a las 23:00, en pleno Festival de la Comunidad... ¡alguien robó el Cristal! Se rompió en cinco fragmentos que cayeron en cada distrito. Desde entonces, estafas, bulos y trolls invaden la ciudad.',
-    'Ustedes son la Liga de Guardianes. Su misión: superar los desafíos de cada distrito, recuperar los fragmentos, ganar pistas secretas... y desenmascarar al culpable entre seis sospechosos.',
+  /* ---------- Historia (escenas animadas) ---------- */
+  const SCENES = [
+    { cap: 'Esta es <b>Nexópolis</b>, la ciudad flotante de la comunidad.',
+      art: () => `<div class="sc-islands">${DISTRICTS.map((d, k) => `<div class="sc-isl" style="animation-delay:${k * .18}s"><svg viewBox="-160 -215 320 370" class="bob d${k}">${Art.island(d)}</svg><span class="pill" style="border-color:${d.color}">${d.name}</span></div>`).join('')}</div>` },
+    { cap: 'En su centro brilla el <b>Cristal de la Confianza</b>, con sus cinco valores.',
+      art: () => `<div class="sc-crystal"><div class="title-crystal">${Art.crystal([], 260, { all: true })}</div>
+        <div class="orbit">${DISTRICTS.map((d, k) => `<span style="--a:${k * 72}deg;--c:${d.color}"><i>${d.value}</i></span>`).join('')}</div></div>` },
+    { cap: 'Anoche, a las 23:00... <b>¡alguien robó el Cristal!</b>', fx: 'heist',
+      art: () => `<div class="sc-heist"><div class="clock">🕚 23:00</div><div class="hc">${Art.crystal([], 240, { all: true })}</div><div class="thief">🥷</div>
+        <div class="shards">${DISTRICTS.map((d, k) => { const a = k / 5 * Math.PI * 2 - Math.PI / 2; return `<span style="background:${d.color};--x:${Math.cos(a) * 260}px;--y:${Math.sin(a) * 200}px"></span>`; }).join('')}</div><div class="flash"></div></div>` },
+    { cap: 'Los 5 fragmentos cayeron en la ciudad. Y hay <b>6 sospechosos</b>.',
+      art: () => `<div class="sc-sus">${SUSPECTS.map((s, k) => `<div class="sc-s" style="animation-delay:${k * .22}s">${Art.avatar(s, { silhouette: true })}<span>?</span></div>`).join('')}</div>` },
+    { cap: 'Ustedes son la <b>Liga de Guardianes</b>. ¡A recuperar el Cristal!',
+      art: () => `<div class="sc-teams">${S.teams.map((t, k) => `<div class="sc-t" style="--tc:${t.color};animation-delay:${k * .2}s"><span>${t.emoji}</span><b>${esc(t.name)}</b></div>`).join('')}</div>` },
   ];
-  function storyArt(i) {
-    if (i === 0) return `<div class="mini-map">${DISTRICTS.map((d, k) => `<div class="center"><svg viewBox="-160 -215 320 370" class="bob d${k}">${Art.island(d)}</svg><div class="pill" style="border-color:${d.color}">${d.name}</div></div>`).join('')}</div>`;
-    if (i === 1) return `<div class="center"><div class="title-crystal">${Art.crystal([], 280, { all: true })}</div>
-      <div class="values">${DISTRICTS.map(d => `<div style="background:${d.color}33;border:1px solid ${d.color}">${d.value}</div>`).join('')}</div></div>`;
-    if (i === 2) return `<div class="shards">${DISTRICTS.map((d, k) => { const a = k / 5 * Math.PI * 2; return `<span style="background:${d.color};--x:${Math.cos(a) * 140}px;--y:${Math.sin(a) * 140}px;animation-delay:${k * .2}s"></span>`; }).join('')}
-      <div class="alarm" style="position:absolute;inset:0;display:grid;place-items:center">${Art.crystal([], 220, { cracked: true })}</div></div>`;
-    return `<div class="lineup" style="grid-template-columns:repeat(3,1fr);max-width:520px">${SUSPECTS.map(s => `<div>${Art.avatar(s, { silhouette: true })}</div>`).join('')}</div>
-      <div class="row center mt">${S.teams.map(t => `<span class="pill" style="border-color:${t.color}">${t.emoji} ${esc(t.name)}</span>`).join('')}</div>`;
-  }
   screens.story = ({ i = 0 }) => {
+    const sc = SCENES[i] || SCENES[0];
+    const last = i >= SCENES.length - 1;
     const root = view(`
-      <div class="story">
-        <div class="story-art">${storyArt(i)}</div>
-        <div class="col">
-          <div class="kicker">Capítulo ${i + 1} de ${STORY.length}</div>
-          <div class="story-text glass"><span id="tw"></span><span class="caret"></span></div>
-          <div class="dots">${STORY.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div>
-          <div class="row center"><button class="btn ghost sm" id="prev">←</button><button class="btn pink" id="nx">Siguiente ➜</button></div>
-        </div>
+      <div class="scene ${sc.fx || ''}">
+        <div class="scene-art">${sc.art()}</div>
+        <h2 class="scene-cap">${sc.cap}</h2>
+        <div class="scene-nav"><button class="btn ghost sm" id="prev">←</button>
+          <div class="dots">${SCENES.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div>
+          <button class="btn pink" id="nx">${last ? '¡Ver a los sospechosos! 🕵️' : 'Siguiente ➜'}</button></div>
       </div>`, { scores: false });
-    if (i === 2) sfx.alarm(); else sfx.whoosh();
-    const tw = $('#tw', root), txt = STORY[i];
-    let k = 0, done = false;
-    const iv = setInterval(() => { k += 2; tw.textContent = txt.slice(0, k); if (k >= txt.length) { clearInterval(iv); done = true; } }, 28);
-    timers.push({ stop: () => clearInterval(iv) });
+    sfx.whoosh();
+    if (sc.fx === 'heist') {
+      later(() => sfx.tick(), 300); later(() => sfx.tick(), 800);
+      later(() => sfx.whoosh(), 1250);
+      later(() => { sfx.alarm(); sfx.stamp(); const st = $('#stage'); st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake'); }, 2250);
+    }
+    const next = () => (last ? go('suspects') : go('story', { i: i + 1 }));
     $('#prev', root).onclick = () => (i > 0 ? go('story', { i: i - 1 }) : go('setup'));
-    $('#nx', root).onclick = () => {
-      if (!done) { clearInterval(iv); tw.textContent = txt; done = true; return; }
-      i < STORY.length - 1 ? go('story', { i: i + 1 }) : go('suspects');
-    };
+    $('#nx', root).onclick = next;
+    onKeys({ ' ': next, ArrowRight: next, Enter: next });
   };
 
   /* ---------- Sospechosos ---------- */
@@ -469,9 +479,9 @@
     const root = view(`
       <div class="center"><div class="kicker">Paso 3 de 3 · Cómo se juega</div><h1 class="h-xl">Las reglas de la <span class="grad-text">Liga</span></h1></div>
       <div class="rules-grid mt">
-        <div class="glass rule-card"><span class="ic">❤️</span><h3>Ganen Likes</h3><p>Cada distrito tiene un desafío distinto: hablar, cazar, debatir, susurrar, hackear. Cada logro suma <b>Likes</b> y desbloquea <b>políticas</b> en el 📚 Archivo.</p></div>
-        <div class="glass rule-card"><span class="ic" style="animation-delay:-1s">🔒</span><h3>Pistas secretas</h3><p>El equipo con más Likes en cada misión recibe una <b>pista secreta</b> sobre el culpable. Los demás... ¡de espaldas!</p></div>
-        <div class="glass rule-card"><span class="ic" style="animation-delay:-2s">🕵️</span><h3>Acusen</h3><p>Al final, en el <b>Mercado de Pistas</b> pueden compartir, negociar... o mentir. Acertar al culpable da <b>+300 Likes</b>.</p></div>
+        <div class="glass rule-card"><span class="ic">🎮</span><h3>Jueguen las misiones</h3><p>5 minijuegos por turnos. Cada acierto suma <b>corazones ❤️</b> y desbloquea <b>políticas</b> en el 📚 Archivo.</p></div>
+        <div class="glass rule-card"><span class="ic" style="animation-delay:-1s">🔒</span><h3>Ganen pistas secretas</h3><p>El mejor equipo de cada misión recibe una <b>pista secreta</b>. Los demás... ¡de espaldas! 🙈</p></div>
+        <div class="glass rule-card"><span class="ic" style="animation-delay:-2s">🕵️</span><h3>Atrapen al culpable</h3><p>Negocien pistas (¡o mientan!) y acusen. Acertar da <b>+500 ❤️</b>.</p></div>
       </div>
       <div class="glass mt"><h3 class="h-md">⏱ Plan de la partida (~45 min)</h3>
         <div class="timeline">
@@ -513,12 +523,34 @@
     $$('.isl', root).forEach(g => (g.onclick = () => {
       const d = district(g.dataset.id);
       if (S.done.includes(d.id) && !confirm(`"${d.mission}" ya está completada. ¿Jugarla otra vez? (No da una pista nueva)`)) return;
-      sfx.whoosh(); go('mission', { id: d.id });
+      fly(root, d);
     }));
     $('.map-center', root).onclick = () => (allDone ? go('market') : toast(`💎 Fragmentos recuperados: ${S.done.length} de 5`));
     const mk = $('#mk', root); if (mk) mk.onclick = () => go('market');
     const sus = $('#sus', root); if (sus) sus.onclick = openSuspects;
   };
+
+  function fly(root, d) {
+    const svg = $('.map-svg', root);
+    if (svg.classList.contains('flying')) return;
+    svg.classList.add('flying'); sfx.whoosh();
+    const [x, y] = MAP_POS[d.id], x0 = 600, y0 = 330, cx = (x0 + x) / 2, cy = Math.min(y0, y) - 180;
+    const ship = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    ship.textContent = '🚀'; ship.setAttribute('font-size', '64'); ship.setAttribute('text-anchor', 'middle'); ship.setAttribute('dominant-baseline', 'middle');
+    svg.appendChild(ship);
+    const t0 = performance.now(), dur = 900;
+    (function f(now) {
+      const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const px = (1 - e) * (1 - e) * x0 + 2 * (1 - e) * e * cx + e * e * x, py = (1 - e) * (1 - e) * y0 + 2 * (1 - e) * e * cy + e * e * y;
+      const dx = 2 * (1 - e) * (cx - x0) + 2 * e * (x - cx), dy = 2 * (1 - e) * (cy - y0) + 2 * e * (y - cy);
+      ship.setAttribute('x', px); ship.setAttribute('y', py);
+      ship.setAttribute('transform', `rotate(${Math.atan2(dy, dx) * 180 / Math.PI + 45} ${px} ${py})`);
+      if (t < 1) return requestAnimationFrame(f);
+      svg.style.setProperty('--zx', `${x / 1200 * 100}%`); svg.style.setProperty('--zy', `${y / 860 * 100}%`);
+      svg.classList.add('zoom'); sfx.reveal();
+      setTimeout(() => go('mission', { id: d.id }), 550);
+    })(t0);
+  }
 
   /* ---------- Introducción de misión ---------- */
   const islandSVG = d => `<svg viewBox="-170 -215 340 380">${Art.island(d)}</svg>`;
@@ -528,6 +560,13 @@
       <div><div class="row" style="gap:10px"><span class="value-tag">${d.value}</span><span class="sub">${d.name} · ${d.app}</span></div>
       <h1 class="h-xl">${d.mission}</h1></div><div class="top-spacer"></div>${right}</div>`;
   const mview = (d, html, opts) => view(`<div style="${mstyle(d)}">${mhead(d, opts && opts.right)}${html}</div>`, opts);
+  const wait = ms => new Promise(r => later(r, ms));
+
+  function controlsHTML(type) {
+    if (type === 'feed') return `<div class="ctrl-row">${['remove', 'disturbing', 'noviolation'].map(k => `<div class="ctrl" style="--dc:${DECISIONS[k].color}"><span class="kc big">${DECISIONS[k].key}</span><b>${DECISIONS[k].label}</b></div>`).join('')}</div><p class="muted center" style="margin:6px 0 0">Flechas del teclado o botones en pantalla</p>`;
+    if (type === 'voice') return `<div class="ctrl-row"><div class="ctrl" style="--dc:#ff4fa3"><span class="kc big">🎤</span><b>Aplausómetro</b></div><div class="ctrl" style="--dc:#22d3ee"><span class="kc big">🗣️</span><b>Debate</b></div></div>`;
+    return `<div class="ctrl-row"><div class="ctrl" style="--dc:#22d3ee"><span class="kc big">🖱️</span><b>Clic o toque en pantalla</b></div></div>`;
+  }
 
   screens.mission = ({ id }) => {
     const d = district(id);
@@ -536,14 +575,16 @@
       <div class="intro-grid">
         <div class="intro-island bob">${islandSVG(d)}</div>
         <div class="col">
-          <p class="h-md" style="font-weight:700">${d.tagline}</p>
-          <ul class="rule-list">${d.rules.map((r, i) => `<li style="animation-delay:${i * .1}s"><span class="n">${i + 1}</span><span>${r}</span></li>`).join('')}</ul>
-          <div class="row"><span class="pill">⏱ ~${d.minutes} min</span><span class="pill">🔒 Pista secreta para el equipo ganador</span></div>
-          <div class="row mt-s"><button class="btn ghost" id="bk">← Mapa</button><button class="btn big pink pulse" id="go">¡Empezar misión! 🚀</button></div>
+          <p class="h-lg tagline">${d.tagline}</p>
+          <div class="steps">${d.steps.map(([e, t], i) => `<div class="step" style="animation-delay:${.15 + i * .15}s"><span>${e}</span><b>${t}</b></div>`).join('')}</div>
+          ${controlsHTML(d.controls)}
+          <div class="row mt-s"><button class="btn ghost" id="bk">← Mapa</button><button class="btn big pink pulse" id="go">¡Empezar! 🚀</button></div>
         </div>
       </div>`);
+    const start = () => { sfx.reveal(); MISSIONS[id](d); };
     $('#bk', root).onclick = () => go('map');
-    $('#go', root).onclick = () => { sfx.reveal(); MISSIONS[id](d); };
+    $('#go', root).onclick = start;
+    onKeys({ ' ': start, Enter: start });
   };
 
   function finishMission(id) {
@@ -556,34 +597,163 @@
   const finishBtn = (label = '🏁 Terminar misión') => `<button class="btn yellow" id="fin">${label}</button>`;
 
   /* =========================================================
+     MARCO ARCADE: turnos por equipo
+     ========================================================= */
+  function arcade(d, cfg) {
+    const order = S.teams.map(t => t.id);
+    const scores = {};
+    let ti = 0;
+
+    function ready() {
+      const t = team(order[ti]);
+      const root = mview(d, `
+        <div class="ready" style="--tc:${t.color}">
+          <div class="ready-em">${t.emoji}</div>
+          <div class="kicker">Turno ${ti + 1} de ${order.length} · ${cfg.seconds} segundos</div>
+          <h2 class="mega" style="font-size:clamp(38px,5vw,80px)">¡${esc(t.name)}!</h2>
+          <p class="h-md">Que pase <b>una persona</b> del equipo. El resto: ¡a gritar consejos! 📣</p>
+          ${controlsHTML(d.controls)}
+          <button class="btn big pink pulse mt" id="go">▶ ¡Jugar! <span class="kc">Espacio</span></button>
+        </div>`, { right: ti > 0 ? '<button class="btn ghost sm" id="fin">🏁 Terminar misión</button>' : '' });
+      $('#go', root).onclick = () => play(t);
+      const f = $('#fin', root); if (f) f.onclick = done;
+      onKeys({ ' ': () => play(t), Enter: () => play(t) });
+    }
+
+    function play(t) {
+      const root = view(`
+        <div class="arcade" style="--tc:${t.color};${mstyle(d)}">
+          <div class="hud">
+            <div class="hud-team"><span>${t.emoji}</span>${esc(t.name)}</div>
+            <div class="hud-mission">${d.icon} ${d.mission}</div>
+            <div class="hud-combo" id="cb"></div>
+            <div class="hud-score"><span id="sc">0</span> ❤️</div>
+            <button class="icon-btn" id="skipturn" title="Terminar el turno ya">⏭</button>
+          </div>
+          <div class="tbar"><i id="tb"></i><span id="tl">${cfg.seconds}</span></div>
+          <div class="arena" id="arena"></div>
+          <div class="overlay" id="ov"></div>
+        </div>`, { full: true });
+      const arena = $('#arena', root), ov = $('#ov', root), scEl = $('#sc', root), cbEl = $('#cb', root), tb = $('#tb', root), tl = $('#tl', root);
+      let score = 0, ctl = null, running = false, elapsed = 0, ended = false, lastSec = cfg.seconds;
+      const log = [];
+      const api = {
+        arena, sfx, log: e => log.push(e),
+        add(n, x, y, txt, color, big) {
+          score += n; scEl.textContent = score;
+          scEl.parentElement.classList.remove('bump'); void scEl.offsetWidth; scEl.parentElement.classList.add('bump');
+          if (txt) Games.floatText(arena, x, y, txt, color, big);
+        },
+        combo(n) { cbEl.innerHTML = n >= 2 ? `🔥 x${n}` : ''; cbEl.classList.remove('pop'); void cbEl.offsetWidth; if (n >= 2) cbEl.classList.add('pop'); },
+        shake() { root.classList.remove('shake'); void root.offsetWidth; root.classList.add('shake'); },
+        progress: () => Math.min(1, elapsed / cfg.seconds),
+        end: () => finish(),
+      };
+      const finish = () => {
+        if (ended) return; ended = true; running = false;
+        if (ctl && ctl.onEnd) ctl.onEnd();
+        if (ctl) ctl.stop();
+        ov.innerHTML = '<div class="ov-big">¡TIEMPO!</div>'; ov.classList.add('on'); sfx.alarm();
+        later(() => result(t, Math.max(0, score), log), 1600);
+      };
+      timers.push({ stop: () => { running = false; if (ctl && !ended) ctl.stop(); } });
+      $('#skipturn', root).onclick = () => { if (running) finish(); };
+      // cuenta regresiva
+      (async () => {
+        ov.classList.add('on');
+        for (const n of ['3', '2', '1', '¡YA!']) { ov.innerHTML = `<div class="ov-big">${n}</div>`; n === '¡YA!' ? sfx.reveal() : sfx.drum(); await wait(n === '¡YA!' ? 500 : 750); }
+        ov.classList.remove('on'); ov.innerHTML = '';
+        ctl = cfg.game(api); running = true;
+        let last = performance.now();
+        (function tick(now) {
+          if (!running) return;
+          elapsed += Math.min(.1, (now - last) / 1000); last = now;
+          const left = Math.max(0, cfg.seconds - elapsed);
+          tb.style.transform = `scaleX(${left / cfg.seconds})`;
+          tb.style.background = left < 6 ? '#ff4d6d' : left < cfg.seconds / 3 ? '#ffd23f' : '';
+          const s = Math.ceil(left); tl.textContent = s;
+          if (s !== lastSec) { lastSec = s; if (s <= 5 && s > 0) sfx.tick(); }
+          if (left <= 0) return finish();
+          requestAnimationFrame(tick);
+        })(last);
+      })();
+    }
+
+    function result(t, score, log) {
+      scores[t.id] = (scores[t.id] || 0) + score;
+      const last = ti >= order.length - 1;
+      const max = Math.max(1, ...Object.values(scores));
+      const root = mview(d, `
+        <div class="result-grid">
+          <div class="glass center res-main" style="--tc:${t.color}">
+            <div class="ready-em">${t.emoji}</div>
+            <h2 class="h-md">${esc(t.name)} consiguió</h2>
+            <div class="res-score"><span id="cnt">0</span> ❤️</div>
+            ${cfg.review ? cfg.review(log) : ''}
+          </div>
+          <div class="col">
+            <h3 class="h-md">🏆 Puntaje de la misión</h3>
+            <div class="bars">${order.map(id => { const tt = team(id), v = scores[id]; return `<div class="bar-row" style="--tc:${tt.color}"><span class="bn">${tt.emoji} ${esc(tt.name)}</span>
+              <div class="bar"><i style="width:${v == null ? 0 : Math.max(3, v / max * 100)}%"></i></div><b>${v == null ? '—' : v}</b></div>`; }).join('')}</div>
+            <div class="row mt">
+              ${last ? `<button class="btn big pink pulse" id="nx">${cfg.after ? 'Continuar ➜' : '🏁 Terminar misión'}</button>${cfg.bonus ? `<button class="btn ghost" id="bonus">${cfg.bonus.label}</button>` : ''}`
+              : `<button class="btn big pink pulse" id="nx">Siguiente equipo ➜</button><button class="btn ghost sm" id="fin">🏁 Terminar misión</button>`}
+            </div>
+          </div>
+        </div>`);
+      // contador animado
+      const cnt = $('#cnt', root); let v = 0; const step = Math.max(1, Math.ceil(score / 40));
+      const iv = setInterval(() => { v = Math.min(score, v + step); cnt.textContent = v; if (v >= score) { clearInterval(iv); } }, 25);
+      timers.push({ stop: () => clearInterval(iv) });
+      award(t.id, score, d.id);
+      if (score > 0) confetti(60 + Math.min(140, score / 8));
+      const next = () => { if (last) { done(); } else { ti++; ready(); } };
+      $('#nx', root).onclick = next;
+      const f = $('#fin', root); if (f) f.onclick = done;
+      const b = $('#bonus', root); if (b) b.onclick = cfg.bonus.run;
+      onKeys({ Enter: next });
+    }
+    const done = () => (cfg.after ? cfg.after() : finishMission(d.id));
+    ready();
+  }
+
+  const reviewList = (items, render) => items.length ? `<div class="review"><h4>💡 Para repasar</h4>${items.slice(0, 4).map(render).join('')}</div>` : '<div class="review ok">🌟 ¡Sin errores!</div>';
+  const dchip = k => `<span class="dchip" style="--dc:${DECISIONS[k].color}">${DECISIONS[k].label}</span>`;
+
+  /* =========================================================
      MISIONES
      ========================================================= */
   const MISSIONS = {};
 
-  /* ---------- 1. TABÚ COMUNITARIO ---------- */
-  MISSIONS.plaza = d => {
+  /* ---------- 1. FEED FRENÉTICO (+ bonus Tabú) ---------- */
+  MISSIONS.plaza = d => arcade(d, {
+    seconds: 45,
+    game: api => Games.feed(api),
+    review: log => reviewList(log, e => `<div class="rv-item">${dchip(e.right)}${e.policy ? `<span class="pol-chip">${policy(e.policy).en}</span>` : ''}<span>${e.text}</span></div>`),
+    bonus: { label: '🎤 Ronda bonus: Tabú de Políticas', run: () => taboo(d) },
+  });
+
+  function taboo(d) {
     const deck = shuffle(TABOO_CARDS);
     let ci = 0, turn = 0;
     const order = S.teams.map(t => t.id);
     const draw = () => deck[ci++ % deck.length];
-
     function pre() {
       const t = team(order[turn]);
       const root = mview(d, `
-        <div class="glass center">
-          <div class="turn-banner" style="--tc:${t.color};justify-content:center">${t.emoji} Turno de ${esc(t.name)} <span class="muted" style="font-size:.6em">(${turn + 1} de ${order.length})</span></div>
-          <h2 class="h-lg">Elijan a quien va a explicar 🎤</h2>
-          <div class="rules-grid mt" style="text-align:left">
-            <div class="fact"><b>🔄 ${esc(t.name)}</b>Todos menos quien explica: ¡de espaldas a la pantalla!</div>
-            <div class="fact"><b>👮 Los demás equipos</b>Son moderadores: miren la pantalla y griten ¡INFRACCIÓN! si escuchan una palabra prohibida.</div>
-            <div class="fact"><b>🚫 Prohibido</b>Decir la palabra, partes de ella, traducirla o hacer mímica con letras.</div>
+        <div class="ready" style="--tc:${t.color}">
+          <div class="kicker">Ronda bonus · Tabú de Políticas · Turno ${turn + 1} de ${order.length}</div>
+          <div class="ready-em">${t.emoji}</div><h2 class="h-xl">${esc(t.name)}</h2>
+          <div class="steps mt">
+            <div class="step"><span>🎤</span><b>Una persona explica el nombre de la política</b></div>
+            <div class="step"><span>🙈</span><b>Su equipo, de espaldas, adivina</b></div>
+            <div class="step"><span>👮</span><b>Los demás gritan ¡INFRACCIÓN!</b></div>
           </div>
-          <button class="btn big pink pulse mt" id="go">▶ ¡Arrancan 60 segundos!</button>
+          <button class="btn big pink pulse mt" id="go">▶ ¡60 segundos!</button>
         </div>`, { right: finishBtn() });
       $('#go', root).onclick = () => play(t);
       $('#fin', root).onclick = () => finishMission(d.id);
     }
-
     function play(t) {
       const played = [];
       let card = draw();
@@ -591,112 +761,87 @@
         <div class="turn-banner" style="--tc:${t.color}">${t.emoji} ${esc(t.name)} explicando · <span class="mini-count" id="cnt">✅ 0</span></div>
         <div class="taboo-layout">
           <div id="cardbox"></div>
-          <div class="taboo-side">
-            <div id="tm"></div>
+          <div class="taboo-side"><div id="tm"></div>
             <button class="btn green big" id="ok">✅ ¡Adivinó! +100</button>
             <button class="btn red" id="bad">⛔ ¡Infracción! −50</button>
-            <button class="btn ghost" id="skip">⏭ Pasar</button>
-          </div>
+            <button class="btn ghost" id="skip">⏭ Pasar</button></div>
         </div>`);
       const paint = () => {
         $('#cardbox', root).innerHTML = `<div class="taboo-card"><div class="kicker" style="color:#bfdbfe">Expliquen sin decir...</div>
-          <div class="word">${card.word}</div>${card.policy ? `<div class="pol-en">${policy(card.policy).en}</div>` : ''}<div class="bn-title">🚫 PALABRAS PROHIBIDAS</div>
+          <div class="word">${card.word}</div><div class="bn-title">🚫 PALABRAS PROHIBIDAS</div>
           <div class="banned">${card.banned.map(b => `<span>${b}</span>`).join('')}</div></div>`;
         $('#cnt', root).textContent = `✅ ${played.filter(p => p.r === 'ok').length}`;
       };
       const next = r => { played.push({ card, r }); card = draw(); paint(); };
       paint();
       makeTimer($('#tm', root), 60, { size: 190, onEnd: () => summary(t, played) });
-      $('#ok', root).onclick = () => { award(t.id, 100, d.id); next('ok'); };
+      $('#ok', root).onclick = () => { award(t.id, 100, d.id); confetti(40); next('ok'); };
       $('#bad', root).onclick = () => { award(t.id, -50, d.id); next('bad'); };
       $('#skip', root).onclick = () => { sfx.click(); next('skip'); };
     }
-
     function summary(t, played) {
-      const ok = played.filter(p => p.r === 'ok').length;
       const last = turn >= order.length - 1;
       const root = mview(d, `
-        <div class="center"><div class="turn-banner" style="--tc:${t.color};justify-content:center">⏰ ¡Tiempo! ${t.emoji} ${esc(t.name)} adivinó ${ok} ${ok === 1 ? 'palabra' : 'palabras'}</div>
-        <h2 class="h-md">💡 Lo que aprendimos en este turno</h2></div>
-        <div class="fact-list mt">${played.length ? played.map(p => `<div class="fact ${p.r}"><b>${p.r === 'ok' ? '✅' : p.r === 'bad' ? '⛔' : '⏭'} ${p.card.word}</b>${p.card.fact}</div>`).join('') : '<p class="muted center">No alcanzaron a jugar cartas.</p>'}</div>
-        <div class="row center mt">${last ? finishBtn('🏁 Ver resultados de la misión') : '<button class="btn pink big" id="nx">Siguiente equipo ➜</button>'}</div>`);
+        <div class="center"><div class="turn-banner" style="--tc:${t.color};justify-content:center">⏰ ¡Tiempo! ${t.emoji} ${esc(t.name)}: ${played.filter(p => p.r === 'ok').length} adivinadas</div></div>
+        <div class="codex mt">${played.map((p, i) => polCard(policy(p.card.policy), false, i * .1)).join('') || '<p class="muted">No alcanzaron a jugar cartas.</p>'}</div>
+        <div class="row center mt">${last ? finishBtn('🏁 Terminar misión') : '<button class="btn pink big" id="nx">Siguiente equipo ➜</button>'}</div>`);
       if (last) $('#fin', root).onclick = () => finishMission(d.id);
       else $('#nx', root).onclick = () => { turn++; pre(); };
     }
     pre();
-  };
+  }
 
-  /* ---------- 2. CAZADORES DE ANZUELOS ---------- */
-  MISSIONS.puerto = d => {
-    let si = 0;
-    function itemHTML(it, sc) {
-      const fl = it.flag ? `flaggable" data-flag="${it.flag}` : '';
-      if (it.type === 'banner') return `<div class="sys-banner ${fl}">${it.text}</div>`;
-      if (it.type === 'forward') return `<div class="fwd ${fl}">${it.text}</div>`;
-      if (it.type === 'link') return `<div class="link-card ${fl}"><div class="li">🎁</div><div class="lt">${it.title}</div><div class="lu">${it.url}</div></div>`;
-      return `<div class="bub ${it.from} ${fl}">${it.name ? `<span class="who">${it.name}</span>` : ''}${it.text}<span class="tm">${it.time || ''}${it.from === 'me' ? ' ✓✓' : ''}</span></div>`;
-    }
-    function scenario() {
-      const sc = SCAM_SCENARIOS[si];
-      const total = Object.keys(sc.flags).length;
-      const found = {};
-      const root = mview(d, `
-        <div class="scam-layout">
-          <div class="phone" style="--pbg:${sc.bg};--bt:${sc.bubbleThem};--bm:${sc.bubbleMe}"><div class="notch"></div>
-            <div class="scr">
-              <div class="hdr ${sc.contactFlag ? `flaggable" data-flag="${sc.contactFlag}` : ''}"><span>←</span><div class="av">${sc.avatar}</div>
-                <div><div class="cn">${sc.contact}</div><div class="cs">${sc.contactSub}</div></div><div class="top-spacer"></div><span>📞 ⋮</span></div>
-              <div class="msgs">${sc.items.map(it => itemHTML(it, sc)).join('')}</div>
-              <div class="hdr" style="padding:10px 12px"><div style="flex:1;background:rgba(255,255,255,.08);border-radius:20px;padding:8px 14px;opacity:.6;font-size:.85em">Mensaje</div><span>🎤</span></div>
-            </div></div>
-          <div class="col">
-            <div class="row"><div><div class="kicker">Chat ${si + 1} de ${SCAM_SCENARIOS.length} · ${sc.app}</div><h2 class="h-lg">${sc.title}</h2>${polChips(sc.policies)}</div>
-              <div class="top-spacer"></div><div id="tm"></div></div>
-            <div class="glass" style="padding:18px"><div class="row"><span class="counter-big"><span id="fc">0</span>/${total}</span>
-              <span class="h-md">anzuelos encontrados 🎣</span></div>
-              <p class="muted" style="margin:6px 0 0">¿Ven algo sospechoso? Griten <b>¡ANZUELO!</b> y expliquen por qué. Moderador: toque el elemento en el teléfono.</p></div>
-            <div class="flag-feed" id="feed"></div>
-            <div class="row"><button class="btn ghost sm" id="rev">👀 Revelar los que faltan</button>
-              <button class="btn pink" id="nx">${si < SCAM_SCENARIOS.length - 1 ? 'Siguiente chat ➜' : 'Ver el escudo anti-anzuelos 🛡️'}</button></div>
-          </div>
-        </div>`);
-      makeTimer($('#tm', root), 90, { size: 120, onEnd: () => toast('⏰ ¡Tiempo! Revelen los anzuelos que faltan') });
-      const addFeed = (key, tid, missed) => {
-        const f = sc.flags[key], t = tid && team(tid);
-        $('#feed', root).insertAdjacentHTML('afterbegin', `<div class="flag-item ${missed ? 'missed' : ''}"><span style="font-size:1.6em">${missed ? '⚠️' : '🎣'}</span>
-          <div><b>${f.title}</b><br>${f.text}</div><span class="fi-team">${t ? t.emoji : missed ? '' : '🙅'}</span></div>`);
-        $('#fc', root).textContent = Object.keys(found).length;
-      };
-      $$('.flaggable', root).forEach(el => (el.onclick = () => {
-        const key = el.dataset.flag;
-        if (key in found) return;
-        el.classList.add('found'); sfx.stamp();
-        pickTeam(`🎣 ${sc.flags[key].title}`, tid => { found[key] = tid; if (tid) award(tid, 50, d.id); addFeed(key, tid); },
-          { sub: '¿Qué equipo lo encontró primero? (+50 ❤️)' });
-      }));
-      $('#rev', root).onclick = () => {
-        $$('.flaggable', root).forEach(el => { const k = el.dataset.flag; if (!(k in found)) { found[k] = null; el.classList.add('missed'); addFeed(k, null, true); } });
-      };
-      $('#nx', root).onclick = () => { si++; si < SCAM_SCENARIOS.length ? scenario() : shield(); };
-    }
-    function shield() {
-      const tips = [
-        ['⏸️', 'Pausa', 'Si hay prisa, miedo o un premio increíble, detente. La urgencia es la carnada.'],
-        ['📞', 'Verifica por otro canal', 'Llama al número que ya conoces o entra a la app oficial, nunca por el enlace del mensaje.'],
-        ['🔑', 'Nunca compartas códigos', 'Ni contraseñas ni códigos de verificación. Nadie legítimo te los pedirá.'],
-        ['🛡️', 'Activa la verificación en dos pasos', 'En WhatsApp y en el Centro de cuentas de Meta. Es tu candado extra.'],
-        ['🚩', 'Reporta y bloquea', 'Ayudas a proteger a toda la comunidad, no solo a ti.'],
-      ];
-      const root = mview(d, `
-        <div class="center"><h2 class="h-lg">🛡️ El escudo anti-anzuelos</h2><p class="muted h-md">Cinco reflejos que la Capitana Phishy odia</p><div class="row center">${polChips(['cyber', 'spam'])}</div></div>
-        <div class="lessons mt">${tips.map((t, i) => `<div style="--c:${['#25d366', '#22d3ee', '#ffd23f', '#a78bfa', '#ff4fa3'][i]}"><div style="font-size:2.4em">${t[0]}</div><h4>${t[1]}</h4>${t[2]}</div>`).join('')}</div>
-        <div class="row center mt">${finishBtn('🏁 Ver resultados de la misión')}</div>`);
-      $('#fin', root).onclick = () => finishMission(d.id);
-    }
-    scenario();
-  };
+  /* ---------- 2. CAZA DE ANZUELOS ---------- */
+  MISSIONS.puerto = d => arcade(d, {
+    seconds: 30,
+    game: api => Games.sea(api),
+    review: log => reviewList(log, e => `<div class="rv-item">${e.right === 'legit' ? '<span class="dchip" style="--dc:#25d366">💌 Era real</span>' : `<span class="dchip" style="--dc:#ff8a3d">🎣 Estafa</span><span class="pol-chip">${policy(e.policy).en}</span>`}<span>${e.text}</span></div>`),
+    after: () => shield(d),
+  });
+  function shield(d) {
+    const tips = [['⏸️', 'Pausa'], ['📞', 'Verifica por otro canal'], ['🔑', 'Nunca compartas códigos'], ['🛡️', 'Verificación en dos pasos'], ['🚩', 'Reporta y bloquea']];
+    const root = mview(d, `
+      <div class="center"><h2 class="h-xl">🛡️ Escudo anti-anzuelos</h2><div class="row center">${polChips(['cyber', 'commercial', 'restricted', 'spam'])}</div></div>
+      <div class="shield-row mt">${tips.map((t, i) => `<div class="shield-tip" style="animation-delay:${i * .15}s;--c:${['#25d366', '#22d3ee', '#ffd23f', '#a78bfa', '#ff4fa3'][i]}"><span>${t[0]}</span><b>${t[1]}</b></div>`).join('')}</div>
+      <div class="row center mt">${finishBtn('🏁 Terminar misión')}</div>`);
+    $('#fin', root).onclick = () => finishMission(d.id);
+  }
 
-  /* ---------- 3. EL CONSEJO DE LA ISLA ---------- */
+  /* ---------- 3. EL CONSEJO DE LA ISLA (aplausómetro) ---------- */
+  let mic = null;
+  async function getMic() {
+    if (mic) return mic;
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') await AC.resume();
+    const an = AC.createAnalyser(); an.fftSize = 1024;
+    AC.createMediaStreamSource(st).connect(an);
+    mic = { an, buf: new Float32Array(an.fftSize) };
+    return mic;
+  }
+  function micLevel() {
+    mic.an.getFloatTimeDomainData(mic.buf);
+    let s = 0; for (const v of mic.buf) s += v * v;
+    return Math.min(1, Math.sqrt(s / mic.buf.length) * 5);
+  }
+  function measure(sec, meter) {
+    return new Promise(res => {
+      const vals = [], t0 = performance.now(); let alive = true, smooth = 0;
+      timers.push({ stop: () => (alive = false) });
+      (function f() {
+        if (!alive) return;
+        const lv = micLevel(); vals.push(lv); smooth = smooth * .7 + lv * .3;
+        meter.style.height = `${Math.max(4, smooth * 100)}%`;
+        if ((performance.now() - t0) / 1000 >= sec) {
+          vals.sort((a, b) => b - a);
+          const top = vals.slice(0, Math.max(1, Math.floor(vals.length / 2)));
+          return res(Math.round(top.reduce((a, b) => a + b, 0) / top.length * 100));
+        }
+        requestAnimationFrame(f);
+      })();
+    });
+  }
+
   MISSIONS.isla = d => {
     const played = new Set();
     let k = 0;
@@ -705,17 +850,15 @@
         <div class="ph"><div class="pa"><span>${c.avatar}</span></div>${c.user}<div class="top-spacer"></div>⋯</div>
         <div class="pimg" style="background:${c.image.bg}"><span class="pe">${c.image.emoji}</span><span class="pcap">${c.image.caption}</span></div>
         <div class="pact">♡ 💬 ↗<div class="top-spacer"></div>🔖</div>
-        <div class="plikes">${c.likes} Me gusta</div>
         <div class="ptxt"><b>${c.user}</b>${c.caption}</div>
       </div>`;
 
     function list() {
       const root = mview(d, `
-        <div class="center"><h2 class="h-lg">📂 Casos pendientes del Consejo</h2>
-          <p class="muted h-md">Elijan un caso. Recomendado: <b>3 casos</b> (~3 minutos cada uno). Llevan ${played.size}.</p></div>
-        <div class="case-grid mt">${COUNCIL_CASES.map(c => `<div class="case-tile ${played.has(c.id) ? 'played' : ''}" data-id="${c.id}">
-          <div class="ce">${c.image.emoji}</div><h4>${c.title}</h4><div class="muted">@${c.user}</div>${played.has(c.id) ? '<div class="pill mt-s">✅ Juzgado</div>' : ''}</div>`).join('')}</div>
-        <div class="row center mt">${played.size ? finishBtn('🏁 Cerrar sesión del Consejo') : ''}</div>`, { right: '' });
+        <div class="center"><h2 class="h-lg">📂 Elijan un caso</h2><p class="muted h-md">Recomendado: 3 casos · Llevan ${played.size}</p></div>
+        <div class="case-grid mt">${COUNCIL_CASES.map((c, i) => `<div class="case-tile ${played.has(c.id) ? 'played' : ''}" data-id="${c.id}" style="animation-delay:${i * .06}s">
+          <div class="ce">${c.image.emoji}</div><h4>${c.title}</h4>${played.has(c.id) ? `<div class="mt-s">${dchip(c.verdict)}</div>` : ''}</div>`).join('')}</div>
+        <div class="row center mt">${played.size ? finishBtn('🏁 Cerrar el Consejo') : ''}</div>`);
       $$('.case-tile', root).forEach(el => (el.onclick = () => caseView(COUNCIL_CASES.find(c => c.id === el.dataset.id))));
       const f = $('#fin', root); if (f) f.onclick = () => finishMission(d.id);
     }
@@ -727,64 +870,89 @@
       const council = S.teams.filter(t => t !== keepT && t !== remT);
       const root = mview(d, `
         <div class="council-layout">
-          <div>${postHTML(c)}</div>
+          <div class="post-in">${postHTML(c)}</div>
           <div class="col">
-            <div><div class="kicker">Caso: ${c.title}</div><h2 class="h-lg">¿Esta publicación se queda o se va?</h2></div>
             <div class="versus">
-              <div class="side keep" id="sk" style="color:#25d366"><div class="sl">🟢 MANTENER</div><div class="st" style="color:#fff">${keepT.emoji} ${esc(keepT.name)}</div></div>
+              <div class="side keep" id="sk"><div class="sl">${DECISIONS.noviolation.icon} NO VIOLATION</div><div class="st">${keepT.emoji} ${esc(keepT.name)}</div></div>
               <div class="vs">VS</div>
-              <div class="side remove" id="sr" style="color:#ff4d6d"><div class="sl">🔴 ELIMINAR</div><div class="st" style="color:#fff">${remT.emoji} ${esc(remT.name)}</div></div>
+              <div class="side remove" id="sr"><div class="sl">${DECISIONS.remove.icon} REMOVE</div><div class="st">${remT.emoji} ${esc(remT.name)}</div></div>
             </div>
-            <div class="council-strip">⚖️ <b>El Consejo:</b> ${council.length ? council.map(t => `${t.emoji} ${esc(t.name)}`).join(' · ') : 'el moderador decide'}</div>
+            <div class="council-strip">⚖️ Consejo y público: ${council.length ? council.map(t => `${t.emoji} ${esc(t.name)}`).join(' · ') : 'el moderador'}</div>
             <div class="glass" id="phase" style="padding:20px"></div>
           </div>
         </div>`);
       const ph = $('#phase', root), sk = $('#sk', root), sr = $('#sr', root);
       const hl = w => { sk.classList.toggle('active', w === 'k'); sr.classList.toggle('active', w === 'r'); sk.classList.toggle('dim', w === 'r'); sr.classList.toggle('dim', w === 'k'); };
-
+      const speak = (w, t, next, label, btnCls) => {
+        hl(w); sfx.whoosh();
+        ph.innerHTML = `<div class="row"><div id="tm"></div><div style="flex:1"><h3 class="h-lg">🎤 ${t.emoji} ${esc(t.name)}</h3>
+          <p class="h-md">¡Convenzan al público!</p><button class="btn ${btnCls}" id="go">${label}</button></div></div>`;
+        makeTimer($('#tm', ph), 40, { size: 130 });
+        $('#go', ph).onclick = next;
+      };
       const phases = {
         prep() {
           hl(null);
-          ph.innerHTML = `<div class="row"><div id="tm"></div><div style="flex:1"><h3 class="h-md">🧠 Preparen sus argumentos</h3>
-            <p>Abogados: piensen qué dirían. Consejo: lean bien el caso. ¿Qué valor está en juego: <b>voz, seguridad, dignidad, autenticidad o privacidad</b>?</p>
-            <button class="btn pink" id="go">🎤 ¡Que hable MANTENER!</button></div></div>`;
-          makeTimer($('#tm', ph), 30, { size: 120 });
+          ph.innerHTML = `<div class="row"><div id="tm"></div><div style="flex:1"><h3 class="h-lg">🧠 ¡A preparar argumentos!</h3>
+            <button class="btn pink" id="go">🎤 Habla NO VIOLATION</button></div></div>`;
+          makeTimer($('#tm', ph), 30, { size: 130 });
           $('#go', ph).onclick = phases.keep;
         },
-        keep() {
-          hl('k'); sfx.whoosh();
-          ph.innerHTML = `<div class="row"><div id="tm"></div><div style="flex:1"><h3 class="h-md">🟢 ${keepT.emoji} ${esc(keepT.name)} defiende MANTENER</h3>
-            <p>45 segundos para convencer al Consejo. ¡Con pasión y argumentos!</p><button class="btn red" id="go">🎤 Turno de ELIMINAR</button></div></div>`;
-          makeTimer($('#tm', ph), 45, { size: 120 });
-          $('#go', ph).onclick = phases.remove;
-        },
-        remove() {
-          hl('r'); sfx.whoosh();
-          ph.innerHTML = `<div class="row"><div id="tm"></div><div style="flex:1"><h3 class="h-md">🔴 ${remT.emoji} ${esc(remT.name)} defiende ELIMINAR</h3>
-            <p>45 segundos. ¡Rebatan a la defensa!</p><button class="btn yellow" id="go">🗳️ ¡A votar!</button></div></div>`;
-          makeTimer($('#tm', ph), 45, { size: 120 });
-          $('#go', ph).onclick = phases.vote;
-        },
+        keep: () => speak('k', keepT, () => phases.remove(), '🎤 Habla REMOVE', 'red'),
+        remove: () => speak('r', remT, () => phases.vote(), '👏 ¡Al aplausómetro!', 'yellow'),
         vote() {
           hl(null);
-          ph.innerHTML = `<h3 class="h-md">🗳️ ${council.length ? 'Consejo: ¡voten levantando la mano!' : 'Moderador: ¿quién argumentó mejor?'}</h3>
-            <p>¿Quién <b>convenció</b> más? (No importa lo que diga la norma: aquí se premia la argumentación) <b>+150 ❤️</b></p>
-            <div class="row"><button class="btn green" id="wk">🟢 Ganó MANTENER</button><button class="btn red" id="wr">🔴 Ganó ELIMINAR</button></div>`;
-          $('#wk', ph).onclick = () => { award(keepT.id, 150, d.id); phases.verdict(); };
-          $('#wr', ph).onclick = () => { award(remT.id, 150, d.id); phases.verdict(); };
+          let decided = false;
+          ph.innerHTML = `<h3 class="h-md center">👏 ¡Aplausómetro! ¿Quién convenció más?</h3>
+            <div class="applause">
+              <div class="ap-side" style="--c:#25d366"><div class="ap-meter"><i id="mk"></i></div><b>NO VIOLATION</b><span class="ap-val" id="vk">—</span></div>
+              <div class="ap-mid"><div class="ap-msg" id="am">El micrófono escuchará al público</div><button class="btn pink" id="ag">🎤 ¡Medir aplausos!</button></div>
+              <div class="ap-side" style="--c:#ff4d6d"><div class="ap-meter"><i id="mr"></i></div><b>REMOVE</b><span class="ap-val" id="vr">—</span></div>
+            </div>
+            <div class="tug"><span>${keepT.emoji}</span><div class="rope"><i id="knot">🎀</i></div><span>${remT.emoji}</span></div>
+            <p class="muted center" style="margin:10px 0 0">¿Sin micrófono? <button class="opt" id="wk">Ganó NO VIOLATION</button> <button class="opt" id="wr">Ganó REMOVE</button></p>`;
+          const am = $('#am', ph), knot = $('#knot', ph);
+          focus(ph);
+          const win = side => {
+            if (decided) return; decided = true;
+            const w = side === 'k' ? keepT : remT;
+            knot.style.left = side === 'k' ? '8%' : '92%';
+            am.innerHTML = `<span class="ap-count">🏆</span>¡Ganó ${side === 'k' ? 'NO VIOLATION' : 'REMOVE'}!<br>${w.emoji} ${esc(w.name)} +300`;
+            hl(side); award(w.id, 300, d.id); confetti(150); sfx.fanfare();
+            $('#ag', ph).outerHTML = '<button class="btn yellow pulse" id="vd">⚖️ Ver la decisión correcta</button>';
+            $('#vd', ph).onclick = phases.verdict;
+          };
+          $('#wk', ph).onclick = () => win('k');
+          $('#wr', ph).onclick = () => win('r');
+          $('#ag', ph).onclick = async () => {
+            try { await getMic(); } catch (e) { toast('🎤 No se pudo usar el micrófono: decidan con los botones de abajo'); return; }
+            $('#ag', ph).disabled = true;
+            const run = async (label, meter, val) => {
+              for (const nn of ['3', '2', '1']) { am.innerHTML = `<span class="ap-count">${nn}</span>Aplausos para <b>${label}</b>`; sfx.drum(); await wait(700); }
+              am.innerHTML = `<span class="ap-count">👏</span>¡AHORA! <b>${label}</b>`;
+              const v = await measure(4, meter); val.textContent = v; return v;
+            };
+            const a = await run('NO VIOLATION', $('#mk', ph), $('#vk', ph));
+            await wait(700);
+            const b = await run('REMOVE', $('#mr', ph), $('#vr', ph));
+            knot.style.left = `${50 - (a - b) / Math.max(1, a + b) * 45}%`;
+            await wait(900);
+            win(a >= b ? 'k' : 'r');
+          };
         },
         verdict() {
-          hl(null); sfx.stamp(); confetti(60);
-          ph.innerHTML = `<div class="center"><div class="kicker">¿Qué dicen las Normas Comunitarias?</div>
-            <div class="mt-s"><span class="stamp ${c.verdict}">${c.verdictLabel}</span></div>
-            <div class="row center mt-s">${polChips(c.policies)}</div></div>
-            <p class="mt" style="font-size:1.1em;line-height:1.45">${c.explain}</p>
-            ${council.length ? `<p class="muted">¿Qué equipos del Consejo votaron como dice la norma? (+50 ❤️ cada uno)</p>
-              <div class="row">${council.map(t => `<button class="opt" style="--tc:${t.color}" data-t="${t.id}">${t.emoji} ${esc(t.name)}</button>`).join('')}</div>` : ''}
-            <div class="row mt"><button class="btn pink" id="nx">📂 Volver a los casos</button></div>`;
-          focus(ph);
-          $$('[data-t]', ph).forEach(b => (b.onclick = () => { if (b.classList.contains('sel')) return; b.classList.add('sel'); award(b.dataset.t, 50, d.id); }));
+          hl(null); sfx.stamp();
+          const dec = DECISIONS[c.verdict];
+          ph.innerHTML = `<div class="center"><div class="kicker">La decisión correcta según las normas</div>
+            <div class="mt-s"><span class="stamp" style="color:${dec.color}">${dec.label}</span></div>
+            <div class="row center mt-s">${polChips(c.policies)}</div>
+            <p class="h-md" style="line-height:1.4">${c.explain}</p>
+            ${council.length ? `<p class="muted">¿Qué equipos del público pensaban lo mismo? (+100 cada uno)</p>
+              <div class="row center">${council.map(t => `<button class="opt" data-t="${t.id}">${t.emoji} ${esc(t.name)}</button>`).join('')}</div>` : ''}
+            <button class="btn pink mt" id="nx">📂 Siguiente caso</button></div>`;
+          $$('[data-t]', ph).forEach(b => (b.onclick = () => { if (b.classList.contains('sel')) return; b.classList.add('sel'); b.style.setProperty('--tc', team(b.dataset.t).color); award(b.dataset.t, 100, d.id); }));
           $('#nx', ph).onclick = () => { played.add(c.id); k++; list(); };
+          focus(ph);
         },
       };
       phases.prep();
@@ -792,30 +960,35 @@
     list();
   };
 
-  /* ---------- 4. TELÉFONO VIRAL ---------- */
-  MISSIONS.torre = d => {
+  /* ---------- 4. ROMPE LA CADENA (+ bonus Teléfono Viral) ---------- */
+  MISSIONS.torre = d => arcade(d, {
+    seconds: 30,
+    game: api => Games.chain(api),
+    review: () => `<div class="review"><h4>💡 Recuerda</h4><div class="row center">${polChips(['misinfo', 'spam'])}</div><p style="margin:8px 0 0">Verificar a tiempo frena un rumor antes de que llegue a todos.</p></div>`,
+    bonus: { label: '📡 Ronda bonus: Teléfono Viral', run: () => telephone(d) },
+  });
+
+  function telephone(d) {
     let mi = Math.floor(Math.random() * PHONE_MESSAGES.length);
     const breaking = msg => `<div class="breaking"><div class="bh"><i></i> ÚLTIMA HORA · NEXÓPOLIS NOTICIAS</div><div class="bt">${msg}</div>
-      <div class="ticker"><span>📡 EN VIVO desde la Torre Espiral · Compartido 12.408 veces · #Nexópolis · Verifica antes de compartir · </span></div></div>`;
-
+      <div class="ticker"><span>📡 EN VIVO desde la Torre Espiral · Compartido 12.408 veces · Verifica antes de compartir · </span></div></div>`;
     function setup() {
       const root = mview(d, `
-        <div class="rules-grid">
-          <div class="glass rule-card"><span class="ic">🚶‍♀️🚶🚶‍♂️</span><h3>1. Formen filas</h3><p>Cada equipo en una fila, lejos de los otros equipos.</p></div>
-          <div class="glass rule-card"><span class="ic" style="animation-delay:-1s">👀</span><h3>2. Primera persona</h3><p>La primera de cada fila se acerca a la pantalla. ¡El resto, <b>de espaldas</b>!</p></div>
-          <div class="glass rule-card"><span class="ic" style="animation-delay:-2s">🤫</span><h3>3. Susurren</h3><p>Una sola vez por persona. Nada de repetir ni escribir.</p></div>
+        <div class="center"><div class="kicker">Ronda bonus</div><h2 class="h-xl">📡 Teléfono Viral</h2></div>
+        <div class="steps mt">
+          <div class="step"><span>🚶‍♀️🚶🚶‍♂️</span><b>Cada equipo hace una fila</b></div>
+          <div class="step"><span>👀</span><b>La primera persona lee la noticia; el resto, de espaldas</b></div>
+          <div class="step"><span>🤫</span><b>Pásenla susurrando, una sola vez</b></div>
         </div>
-        <div class="row center mt"><button class="btn big pink pulse" id="go">📡 ¡Listos! Mostrar la noticia</button></div>`, { right: '' });
+        <div class="row center mt"><button class="btn big pink pulse" id="go">📡 ¡Mostrar la noticia!</button></div>`);
       $('#go', root).onclick = countdown;
     }
-    function countdown() {
-      let n = 3;
-      const tick = () => {
-        if (n === 0) return show();
-        const root = view(`<div class="countdown-big warm-text">${n}</div><p class="center h-md">Primeras personas: ¡atentas! 👀 · Todos los demás: ¡de espaldas! 🙈</p>`, { full: true });
-        sfx.drum(); n--; later(tick, 1000);
-      };
-      tick();
+    async function countdown() {
+      for (const n of ['3', '2', '1']) {
+        view(`<div class="countdown-big warm-text">${n}</div><p class="center h-md">Primeras personas: ¡atentas! 👀 · Los demás: ¡de espaldas! 🙈</p>`, { full: true });
+        sfx.drum(); await new Promise(r => setTimeout(r, 900));
+      }
+      show();
     }
     function show() {
       const root = view(`<div style="${mstyle(d)}"><div class="row" style="justify-content:space-between;margin-bottom:20px">
@@ -828,184 +1001,89 @@
         <div class="center"><div class="hidden-msg">🤫 ¡Noticia oculta!<br><span class="grad-text">Pásenla susurrando</span></div>
         <div class="whisper-waves">${Array.from({ length: 14 }, (_, i) => `<i style="animation-delay:${i * .08}s"></i>`).join('')}</div>
         <div class="row center"><div id="tm"></div></div>
-        <p class="muted h-md">Una sola vez por persona. ¡La última persona de cada fila guarda el mensaje!</p>
-        <button class="btn pink big mt-s" id="go">🎤 Todos terminaron</button></div>`);
+        <button class="btn pink big mt-s" id="go">🎤 ¡Terminamos!</button></div>`);
       makeTimer($('#tm', root), 90, { size: 150 });
-      $('#go', root).onclick = tell;
-    }
-    function tell() {
-      const root = mview(d, `
-        <div class="center"><h2 class="h-lg">🎤 Últimas personas: ¡digan la noticia en voz alta!</h2>
-        <p class="muted h-md">Un equipo a la vez. El resto escucha... y se ríe.</p></div>
-        <div class="score-rows mt">${S.teams.map((t, i) => `<div class="score-row" style="--tc:${t.color};animation:screenIn .5s ${i * .1}s both"><div class="tn">${t.emoji} ${esc(t.name)}</div><span class="muted">🎤 Turno ${i + 1}</span></div>`).join('')}</div>
-        <div class="row center mt"><button class="btn big yellow pulse" id="go">📰 Revelar la noticia original</button></div>`);
       $('#go', root).onclick = reveal;
     }
     function reveal() {
-      const opts = [['🎯 Idéntica', 200], ['👍 Casi igual', 150], ['🤏 Más o menos', 100], ['🐉 ¡Inventaron todo!', 50]];
+      const opts = [['🎯 Idéntica', 200], ['👍 Casi', 150], ['🤏 Más o menos', 100], ['🐉 ¡Inventada!', 50]];
       const given = {};
       const root = mview(d, `
-        ${breaking(PHONE_MESSAGES[mi])}
-        <h3 class="h-md mt">🏅 ¿Qué tan fiel llegó la noticia?</h3>
-        <div class="score-rows mt-s">${S.teams.map(t => `<div class="score-row" style="--tc:${t.color}"><div class="tn">${t.emoji} ${esc(t.name)}</div>
+        <p class="h-md center">🎤 Últimas personas de cada fila: ¡digan la noticia en voz alta! Luego, la original:</p>
+        <div class="reveal-news">${breaking(PHONE_MESSAGES[mi])}</div>
+        <div class="score-rows mt">${S.teams.map(t => `<div class="score-row" style="--tc:${t.color}"><div class="tn">${t.emoji} ${esc(t.name)}</div>
           <div class="opts">${opts.map(([l, p]) => `<button class="opt" data-t="${t.id}" data-p="${p}">${l} +${p}</button>`).join('')}</div></div>`).join('')}</div>
-        <div class="glass mt"><div class="row" style="align-items:flex-start">
-          <div style="flex:1.2;min-width:300px"><h3 class="h-md">🔥 Lo falso corre más rápido</h3>${polChips(['misinfo', 'spam'])}
-            <p>Un estudio del MIT publicado en <i>Science</i> (2018) encontró que en redes sociales las noticias falsas llegaban a más personas y más rápido que las verdaderas.
-            Cada vez que alguien comparte sin verificar, el mensaje cambia un poquito... como acaban de vivir.</p>
-            <p><b>Antes de compartir:</b> ⏸️ haz una pausa · 🔎 busca la fuente original y la fecha · 🏷️ fíjate en las etiquetas de contexto (verificación, Notas de la Comunidad, "Reenviado muchas veces") · 😱 si te genera una emoción extrema, sospecha.</p></div>
-          <div style="flex:1;min-width:300px"><canvas class="network" id="net"></canvas>
-            <div class="row center"><span class="pill" style="border-color:#ff4fa3">🔥 Rumor</span><span class="pill" style="border-color:#22d3ee">✅ Corrección</span></div></div>
-        </div></div>
-        <div class="row center mt"><button class="btn ghost" id="ch">🔁 Jugar otra ronda con otra noticia</button>${finishBtn('🏁 Ver resultados de la misión')}</div>`);
+        <div class="row center mt">${finishBtn('🏁 Terminar misión')}</div>`);
       $$('.opt', root).forEach(b => (b.onclick = () => {
         const tid = b.dataset.t, p = +b.dataset.p, prev = given[tid] || 0;
         $$(`.opt[data-t="${tid}"]`, root).forEach(x => x.classList.remove('sel')); b.classList.add('sel');
         b.style.setProperty('--tc', team(tid).color);
         given[tid] = p; award(tid, p - prev, d.id);
       }));
-      $('#ch', root).onclick = () => { mi = (mi + 1) % PHONE_MESSAGES.length; setup(); };
       $('#fin', root).onclick = () => finishMission(d.id);
-      network($('#net', root));
     }
     setup();
-  };
-
-  function network(cv) {
-    const ctx = cv.getContext('2d');
-    const W = cv.width = cv.clientWidth * 2, H = cv.height = cv.clientHeight * 2;
-    const mk = (cx, col, rate) => ({ col, rate, nodes: [{ x: cx, y: H / 2, p: null, t: 0 }] });
-    const nets = [mk(W * .3, '#ff4fa3', .5), mk(W * .75, '#22d3ee', .14)];
-    let f = 0, alive = true;
-    timers.push({ stop: () => (alive = false) });
-    (function step() {
-      if (!alive || !document.body.contains(cv)) return;
-      f++;
-      ctx.clearRect(0, 0, W, H);
-      for (const n of nets) {
-        if (n.nodes.length < 140 && Math.random() < n.rate) {
-          const par = n.nodes[Math.floor(Math.random() * n.nodes.length)];
-          const a = Math.random() * Math.PI * 2, r = 30 + Math.random() * 40;
-          const x = Math.max(10, Math.min(W - 10, par.x + Math.cos(a) * r)), y = Math.max(10, Math.min(H - 10, par.y + Math.sin(a) * r));
-          n.nodes.push({ x, y, p: par, t: f });
-        }
-        ctx.strokeStyle = n.col + '88'; ctx.lineWidth = 2;
-        for (const nd of n.nodes) if (nd.p) { ctx.beginPath(); ctx.moveTo(nd.p.x, nd.p.y); ctx.lineTo(nd.x, nd.y); ctx.stroke(); }
-        for (const nd of n.nodes) {
-          const age = Math.min(1, (f - nd.t) / 20);
-          ctx.fillStyle = n.col; ctx.beginPath(); ctx.arc(nd.x, nd.y, (nd.p ? 6 : 12) * age + 1, 0, 7); ctx.fill();
-        }
-      }
-      requestAnimationFrame(step);
-    })();
   }
 
-  /* ---------- 5. LA CONTRASEÑA DELATORA ---------- */
-  MISSIONS.nebulosa = d => {
+  /* ---------- 5. ESCÁNER DE PRIVACIDAD + BÓVEDA ---------- */
+  function profileHTML(shuffled) {
     const P = PRIVACY;
-    const profileHTML = () => `
-      <div class="profile">
-        <div class="top"><div class="pav">${P.avatar}</div>
-          <div><div class="h-md" style="font-family:var(--font-head)">@${P.user}</div>
-            <div class="stats mt-s"><div><b>238</b>publicaciones</div><div><b>1.204</b>seguidores</div><div><b>980</b>seguidos</div></div></div></div>
-        <div class="bio"><b>${P.name}</b>${P.bio.map(b => `<span class="${b.risk ? 'risk' : ''}" data-risk="${b.risk || ''}">${b.text}</span>`).join('')}<span class="pill" style="align-self:flex-start;margin-top:6px">🌍 Perfil público</span></div>
-        <div class="grid">${P.posts.map(p => `<div class="gp ${p.risk ? 'risk' : ''}" data-risk="${p.risk || ''}" style="background:${p.bg}"><div class="ge">${p.emoji}</div><div class="gc">${p.caption}</div></div>`).join('')}</div>
-      </div>`;
-
-    function hack() {
-      let solved = false;
-      const root = mview(d, `
-        <div class="priv-layout">
-          <div>${profileHTML()}</div>
-          <div class="glass vault">
-            <div class="row" style="justify-content:space-between"><div style="text-align:left"><div class="kicker">Bóveda de Toño Turbo</div><h2 class="h-md">Fragmento de PRIVACIDAD</h2></div><div id="tm"></div></div>
-            <div class="vault-door mt" id="door"><div class="dial"></div></div>
-            <div class="hint-box">🔑 Pista de recuperación de Toño:<br><span style="font-size:1.15em;color:#f0abfc">${P.hint}</span></div>
-            <p class="muted">Equipos: escríbanla en papel y díganla al moderador. (Sin espacios)</p>
-            <input class="pw-input" id="pw" placeholder="••••••••" autocomplete="off" spellcheck="false">
-            <div class="row center mt-s"><button class="btn pink" id="try">🔓 Probar contraseña</button><button class="btn ghost sm" id="give">🏳️ Revelar</button></div>
-            <div id="after"></div>
-          </div>
-        </div>`);
-      makeTimer($('#tm', root), 180, { size: 110 });
-      const door = $('#door', root), pw = $('#pw', root);
-      const open = () => {
-        solved = true; clearTimers();
-        door.classList.add('open'); sfx.reveal(); confetti(120);
-        pw.value = 'Pelusa1995*'; pw.disabled = true;
-        $('#after', root).innerHTML = `<div class="mt"><div class="fragment">💎</div><h3 class="h-md">¡Bóveda abierta!</h3>
-          <p>Toño usó <b>datos que él mismo publicó</b>. Cualquiera con 2 minutos podía adivinarla... 😬</p>
-          <div class="row center"><button class="btn green sm" id="first">🥇 Primer equipo +250</button><button class="btn sm ghost" id="also">👏 Otros que la tenían +100</button></div>
-          <button class="btn yellow mt" id="nx">🔎 Siguiente: auditoría de privacidad ➜</button></div>`;
-        focus($('#after', root));
-        $('#first', root).onclick = () => pickTeam('🥇 ¿Qué equipo la descifró primero?', tid => tid && award(tid, 250, d.id));
-        $('#also', root).onclick = () => pickTeam('👏 ¿Otro equipo que también la tenía?', tid => tid && award(tid, 100, d.id));
-        $('#nx', root).onclick = audit;
-      };
-      const tryIt = () => {
-        if (solved) return;
-        const v = pw.value.trim().toLowerCase().replace(/\s+/g, '');
-        if (!v) return;
-        if (v === P.answer) open();
-        else { door.classList.remove('shake'); void door.offsetWidth; door.classList.add('shake'); sfx.bad(); toast('🚫 ACCESO DENEGADO'); pw.select(); }
-      };
-      $('#try', root).onclick = tryIt;
-      pw.onkeydown = e => { if (e.key === 'Enter') tryIt(); };
-      $('#give', root).onclick = () => confirm('¿Revelar la contraseña sin que nadie la adivine?') && open();
-    }
-
-    function audit() {
-      const root = mview(d, `
-        <div class="priv-layout">
-          <div>${profileHTML()}</div>
-          <div class="col">
-            <div class="glass"><div class="row"><div id="tm"></div><div style="flex:1"><h2 class="h-md">🔎 Auditoría de privacidad</h2>
-              <p>En <b>60 segundos</b>, anoten en su papel <b>todos los datos riesgosos</b> que Toño expone en su perfil. ¡Gana quien encuentre más!</p></div></div></div>
-            <div class="flag-feed" id="feed"></div>
-            <div class="row"><button class="btn pink" id="rev">👀 Revelar riesgos</button></div>
-          </div>
-        </div>`);
-      makeTimer($('#tm', root), 60, { size: 120 });
-      $('#rev', root).onclick = () => {
-        const seen = new Set();
-        const feed = $('#feed', root);
-        Object.entries(P.risks).forEach(([k, txt], i) => later(() => {
-          $$(`[data-risk="${k}"]`, root).forEach(el => el.classList.add('found'));
-          if (!seen.has(k)) { seen.add(k); feed.insertAdjacentHTML('beforeend', `<div class="flag-item missed"><span style="font-size:1.5em">⚠️</span><div>${txt}</div></div>`); sfx.tick(); }
-        }, i * 450));
-        later(() => {
-          $('#rev', root).outerHTML = `<button class="btn green" id="best">🏆 ¿Quién encontró más? +150</button><button class="btn yellow" id="les">🛡️ Cómo protegerse ➜</button>`;
-          $('#best', root).onclick = () => pickTeam('🏆 ¿Qué equipo encontró más riesgos?', tid => tid && award(tid, 150, d.id));
-          $('#les', root).onclick = lessons;
-        }, Object.keys(P.risks).length * 450 + 200);
-      };
-    }
-
-    function lessons() {
-      const tips = [
-        ['🔍', 'Revisión de privacidad', 'Elige quién ve tus publicaciones, tu información y quién puede encontrarte.'],
-        ['👥', 'Audiencia', 'Cada publicación puede ser Pública, Amigos o una lista personalizada. Tú decides.'],
-        ['🔑', 'Contraseñas únicas', 'Largas, distintas en cada cuenta y sin datos que publiques (mascota, cumpleaños...).'],
-        ['🛡️', 'Dos pasos', 'Activa la verificación en dos pasos desde el Centro de cuentas.'],
-        ['✈️', 'Publica después', 'Comparte el viaje cuando vuelvas, no mientras tu casa está sola.'],
-      ];
-      const root = mview(d, `
-        <div class="center"><h2 class="h-lg">🛡️ Escudo de privacidad</h2><p class="muted h-md">Lo que Toño Turbo debió hacer</p><div class="row center">${polChips(['privacy'])}</div></div>
-        <div class="lessons mt">${tips.map((t, i) => `<div style="--c:${['#a78bfa', '#22d3ee', '#ffd23f', '#25d366', '#ff4fa3'][i]}"><div style="font-size:2.4em">${t[0]}</div><h4>${t[1]}</h4>${t[2]}</div>`).join('')}</div>
-        <div class="row center mt">${finishBtn('🏁 Ver resultados de la misión')}</div>`);
-      $('#fin', root).onclick = () => finishMission(d.id);
-    }
-
+    const posts = shuffled ? shuffle(P.posts) : P.posts;
+    return `<div class="profile">
+      <div class="top"><div class="pav">${P.avatar}</div>
+        <div><div class="h-md" style="font-family:var(--font-head)">@${P.user}</div>
+          <div class="stats mt-s"><div><b>238</b>publicaciones</div><div><b>1.204</b>seguidores</div><div><b>980</b>seguidos</div></div></div></div>
+      <div class="bio"><b>${P.name}</b>${P.bio.map(b => `<span class="risk" data-risk="${b.risk || ''}">${b.text}</span>`).join('')}</div>
+      <div class="grid">${posts.map(p => `<div class="gp risk" data-risk="${p.risk || ''}" style="background:${p.bg}"><div class="ge">${p.emoji}</div><div class="gc">${p.caption}</div></div>`).join('')}</div>
+    </div>`;
+  }
+  MISSIONS.nebulosa = d => arcade(d, {
+    seconds: 30,
+    game: api => Games.scanner(api, profileHTML(true)),
+    after: () => vault(d),
+  });
+  function vault(d) {
+    const P = PRIVACY;
+    let solved = false;
     const root = mview(d, `
-      <div class="intro-grid">
-        <div class="center"><div style="font-size:9em" class="bob">🧑‍🎤</div></div>
-        <div class="glass"><div class="kicker">Informe de inteligencia</div><h2 class="h-lg mt-s">Conozcan a Toño Turbo</h2>
-          <p class="h-md" style="line-height:1.4">El cómplice del ladrón escondió el fragmento de <b>PRIVACIDAD</b> en una bóveda digital.
-          La buena noticia: Toño publica <b>absolutamente todo</b> en su perfil público... incluso lo que no debería. 🙈</p>
-          <button class="btn big pink pulse mt" id="go">🔓 Hackear la bóveda (éticamente)</button></div>
+      <div class="priv-layout">
+        <div>${profileHTML(false)}</div>
+        <div class="glass vault">
+          <div class="kicker">¡Todos los equipos a la vez!</div><h2 class="h-lg">🔐 Abran la bóveda de Toño</h2>
+          <div class="vault-door mt" id="door"><div class="dial"></div></div>
+          <div class="hint-box">🔑 Pista de su contraseña:<br><span style="font-size:1.15em;color:#f0abfc">${P.hint}</span></div>
+          <p class="muted">Escríbanla en papel y díganla al moderador. ¡El primero gana +300!</p>
+          <input class="pw-input" id="pw" placeholder="••••••••" autocomplete="off" spellcheck="false">
+          <div class="row center mt-s"><button class="btn pink" id="try">🔓 Probar</button><button class="btn ghost sm" id="give">🏳️ Revelar</button><div id="tm"></div></div>
+          <div id="after"></div>
+        </div>
       </div>`);
-    $('#go', root).onclick = hack;
-  };
+    makeTimer($('#tm', root), 120, { size: 90 });
+    const door = $('#door', root), pw = $('#pw', root);
+    const open = () => {
+      solved = true; clearTimers(); $('#tm', root).innerHTML = '';
+      door.classList.add('open'); sfx.reveal(); confetti(180);
+      pw.value = 'Pelusa1995*'; pw.disabled = true;
+      $('#after', root).innerHTML = `<div class="mt"><div class="fragment">💎</div><h3 class="h-md">¡Bóveda abierta!</h3>
+        <p>Toño usó <b>datos que él mismo publicó</b>. ${polChips(['privacy'])}</p>
+        <div class="row center"><button class="btn green sm" id="first">🥇 Primer equipo +300</button><button class="btn sm ghost" id="also">👏 Otro equipo +100</button></div>
+        <div class="row center mt-s">${finishBtn('🏁 Terminar misión')}</div></div>`;
+      $('#first', root).onclick = () => pickTeam('🥇 ¿Qué equipo la descifró primero?', tid => tid && award(tid, 300, d.id));
+      $('#also', root).onclick = () => pickTeam('👏 ¿Otro equipo que también la tenía?', tid => tid && award(tid, 100, d.id));
+      $('#fin', root).onclick = () => finishMission(d.id);
+      focus($('#after', root));
+    };
+    const tryIt = () => {
+      if (solved) return;
+      const v = pw.value.trim().toLowerCase().replace(/\s+/g, '');
+      if (!v) return;
+      if (v === P.answer) open();
+      else { door.classList.remove('shake'); void door.offsetWidth; door.classList.add('shake'); sfx.bad(); toast('🚫 ACCESO DENEGADO'); pw.select(); }
+    };
+    $('#try', root).onclick = tryIt;
+    pw.onkeydown = e => { if (e.key === 'Enter') tryIt(); };
+    $('#give', root).onclick = () => confirm('¿Revelar la contraseña?') && open();
+  }
 
   /* ---------- Fin de misión + pista secreta ---------- */
   screens.missionEnd = ({ id }) => {
@@ -1020,7 +1098,7 @@
       <div class="intro-grid">
         <div class="facet-restore">${Art.crystal(S.done, 280)}<h2 class="h-lg mt-s">💎 ¡Fragmento de <span style="color:${d.color}">${d.value}</span> recuperado!</h2></div>
         <div class="col">
-          <h3 class="h-md">Likes ganados en esta misión</h3>
+          <h3 class="h-md">Corazones ganados en esta misión</h3>
           <div class="result-list">${ranked.map((t, i) => `<div class="result-row ${sel.has(t.id) ? 'sel' : ''}" data-id="${t.id}" style="border-left:6px solid ${t.color}">
             <span class="rk">${medals[i] || '·'}</span><span style="font-size:1.6em">${t.emoji}</span><span class="rn">${esc(t.name)}</span>
             <span class="rp">${pts[t.id] || 0} ❤️</span><span class="ck">${sel.has(t.id) ? '🔒' : ''}</span></div>`).join('')}</div>
@@ -1058,6 +1136,7 @@
     $('#show', root).onclick = () => {
       const r2 = view(`
         <div class="envelope">
+          <div class="env">💌</div>
           <div class="clue-card" id="card"><div class="seal">🔒</div>
             <div class="ct">PISTA SECRETA · ${d.name.toUpperCase()}</div>
             <div class="cx">${clueText(clue)}</div>
@@ -1100,14 +1179,14 @@
       <div class="market-grid mt">
         <div class="market-rules">
           <div><span class="mi">🗣️</span><b>Compartan</b><br>Pueden contarle sus pistas a otros equipos... si quieren.</div>
-          <div><span class="mi">💱</span><b>Negocien</b><br>Intercambien pistas o véndanlas por Likes (el moderador hace la transferencia).</div>
+          <div><span class="mi">💱</span><b>Negocien</b><br>Intercambien pistas o véndanlas por corazones (el moderador hace la transferencia).</div>
           <div><span class="mi">🤥</span><b>¿Mentir?</b><br>Está permitido. Por eso mismo: <b>¡verifiquen sus fuentes!</b> Igual que en las redes.</div>
           <div><span class="mi">✕</span><b>Descarten</b><br>Crucen sospechosos en su hoja. Solo puede quedar uno.</div>
         </div>
         <div class="center"><div id="tm"></div><p class="muted">Tiempo de mercado</p></div>
       </div>
       <div class="glass mt" style="padding:18px"><div class="row center">${holdersList || '<span class="muted">Aún no se han entregado pistas.</span>'}</div></div>
-      <div class="glass mt" style="padding:18px"><h3 class="h-md center">💱 Transferir Likes</h3>
+      <div class="glass mt" style="padding:18px"><h3 class="h-md center">💱 Transferir corazones</h3>
         <div class="transfer mt-s"><select id="tf">${opts}</select> ➜ <select id="tt">${opts}</select>
           <input id="ta" type="number" value="50" step="10" min="10" style="width:110px"> ❤️ <button class="btn sm green" id="tx">Transferir</button></div></div>
       <div class="row center mt"><button class="btn ghost" id="sus">🕵️ Ver sospechosos</button><button class="btn big pink pulse" id="nx">⚖️ ¡Hora de acusar!</button></div>`);
@@ -1174,10 +1253,10 @@
       const winners = S.teams.filter(t => S.accus[t.id] === S.culprit);
       $('#conf', root).innerHTML = `
         <div class="glass confession">💬 "${culprit.confession}"</div>
-        <div class="center mt"><h3 class="h-md">${winners.length ? `🎉 Acertaron: ${winners.map(t => `${t.emoji} ${esc(t.name)}`).join(' · ')} <span style="color:#7ddf64">+300 ❤️</span>` : '😱 ¡Nadie acertó! El culpable casi se sale con la suya...'}</h3>
+        <div class="center mt"><h3 class="h-md">${winners.length ? `🎉 Acertaron: ${winners.map(t => `${t.emoji} ${esc(t.name)}`).join(' · ')} <span style="color:#7ddf64">+500 ❤️</span>` : '😱 ¡Nadie acertó! El culpable casi se sale con la suya...'}</h3>
         <button class="btn big pink pulse mt" id="fin">🏆 Ver ranking final</button></div>`;
       focus($('#fin', root));
-      if (!S.revealed) { S.revealed = true; save(); winners.forEach((t, i) => setTimeout(() => award(t.id, 300), i * 300)); }
+      if (!S.revealed) { S.revealed = true; save(); winners.forEach((t, i) => setTimeout(() => award(t.id, 500), i * 300)); }
       $('#fin', root).onclick = () => go('final');
     }, 1400 + order.length * 1300 + 3600);
   };

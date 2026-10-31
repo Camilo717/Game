@@ -7,7 +7,7 @@ Juego de ~45 minutos para 2–6 equipos, pensado para proyectarse en una pantall
 > Se rompió en 5 fragmentos: **Voz, Seguridad, Dignidad, Autenticidad y Privacidad**.
 > La Liga de Guardianes (¡ustedes!) debe recuperarlos, ganar pistas secretas y desenmascarar al culpable entre 6 sospechosos.
 
-No es un quiz: los equipos **hablan, cazan, debaten, susurran, hackean, negocian y acusan**.
+**Es un juego de acción:** cada misión es un minijuego arcade por turnos. Una persona de cada equipo juega frente a la pantalla mientras su equipo le grita consejos. Todo está en español, excepto los **nombres oficiales de las políticas** y las **decisiones de moderación** (**REMOVE**, **NO VIOLATION** y **MARK AS DISTURBING**).
 
 ---
 
@@ -17,13 +17,13 @@ El juego está alineado con las 18 políticas de las Normas Comunitarias de Meta
 
 | Distrito / misión | Políticas que desbloquea | Dónde aparecen en el juego |
 |---|---|---|
-| 💬 Plaza Azul · Tabú | Hateful Conduct · Violence and Incitement · Dangerous Organizations and Individuals · Coordinating Harm and Promoting Crime | Cartas de Tabú, casos del Consejo (*spoiler*, *hincha furioso*, *grupo armado*) |
-| 🎣 Puerto Verde · Anzuelos | Cybersecurity · Prohibited Commercial Practices · Restricted Goods and Services · Human Exploitation 🛡️ | Chats de phishing, casos *farmacia del DM* y *oferta de trabajo soñada*, sospechosos |
+| ⚡ Plaza Azul · Feed Frenético | Hateful Conduct · Violence and Incitement · Dangerous Organizations and Individuals · Coordinating Harm and Promoting Crime | Publicaciones del Feed, cartas de Tabú, casos del Consejo (*spoiler*, *hincha furioso*, *grupo armado*) |
+| 🎣 Puerto Verde · Caza de Anzuelos | Cybersecurity · Prohibited Commercial Practices · Restricted Goods and Services · Human Exploitation 🛡️ | Mensajes de estafa en el mar, casos *farmacia del DM* y *oferta de trabajo soñada*, sospechosos |
 | ⚖️ Isla Gradiente · Consejo | Bullying and Harassment · Violent and Graphic Content · Suicide, Self-Injury, and Eating Disorders 🛡️ · Adult Nudity and Sexual Activity 🛡️ · Adult Sexual Solicitation and Sexually Explicit Language 🛡️ | Casos *papa presidencial*, *captura expuesta*, *video de la protesta* |
-| 📡 Torre Espiral · Teléfono Viral | Misinformation · Spam | Teléfono viral, caso *té milagroso*, cadenas de WhatsApp |
-| 🔐 Nebulosa Horizon · Contraseña | Privacy Violations · Adult Sexual Exploitation 🛡️ · Child Sexual Exploitation, Abuse, and Nudity 🛡️ | Auditoría de privacidad, casos con datos personales |
+| 🔗 Torre Espiral · Rompe la Cadena | Misinformation · Spam | Red de rumores, caso *té milagroso*, cadenas en el mar |
+| 🔦 Nebulosa Horizon · Escáner | Privacy Violations · Adult Sexual Exploitation 🛡️ · Child Sexual Exploitation, Abuse, and Nudity 🛡️ | Auditoría de privacidad, casos con datos personales |
 
-🛡️ **Políticas de protección especial**: por respeto, estas **no se juegan** (no hay cartas de Tabú ni casos de debate sobre ellas). Aparecen en el Archivo con una explicación clara y seria. Es un buen momento para que la persona moderadora haga una pausa y las comente.
+🛡️ **Políticas de protección especial**: por respeto, estas **no se juegan** (no hay publicaciones, cartas ni debates sobre ellas). Aparecen en el Archivo con una explicación clara y seria. Es un buen momento para que la persona moderadora haga una pausa y las comente.
 
 ---
 
@@ -54,50 +54,51 @@ El progreso se guarda solo en el navegador. Si la página se recarga por error, 
 
 | Momento | Duración | Qué pasa |
 |---|---|---|
-| Historia + sospechosos + reglas | 4–5′ | Narración animada y presentación de los 6 sospechosos |
-| 💬 **Plaza Azul** · Facebook · *VOZ* | 8′ | **Tabú Comunitario**: explicar conceptos de las Normas Comunitarias sin decir las palabras prohibidas. Los otros equipos vigilan y gritan *¡INFRACCIÓN!* |
-| 🎣 **Puerto Verde** · WhatsApp · *SEGURIDAD* | 7′ | **Cazadores de Anzuelos**: 3 chats de estafa en un celular. Todos buscan las señales a la vez y gritan *¡ANZUELO!* |
-| ⚖️ **Isla Gradiente** · Instagram · *DIGNIDAD* | 10′ | **El Consejo de la Isla**: un equipo defiende MANTENER una publicación y otro ELIMINARLA. El resto es el Consejo y vota. Luego se revela qué dicen las normas |
-| 📡 **Torre Espiral** · Threads · *AUTENTICIDAD* | 7′ | **Teléfono Viral**: una noticia pasa de boca en boca, susurrada. ¿Cuánto se deforma? Se cierra con una charla sobre cómo se propaga la desinformación |
-| 🔐 **Nebulosa Horizon** · Meta Quest · *PRIVACIDAD* | 7′ | **La Contraseña Delatora**: descifrar la contraseña de un cómplice usando lo que publica, y luego una auditoría de privacidad de su perfil |
-| 🤝 Mercado de Pistas + ⚖️ Acusación + 🎭 Revelación | 5–6′ | Negociar pistas (¡o mentir!), acusar en secreto y revelar al culpable |
+| Historia animada + sospechosos + reglas | 4–5′ | Escenas animadas: la ciudad, el robo del Cristal y los 6 sospechosos |
+| ⚡ **Plaza Azul** · *Feed Frenético* | 7′ | Las publicaciones llegan a toda velocidad. Se moderan con las flechas: **← REMOVE**, **↓ MARK AS DISTURBING**, **→ NO VIOLATION**. Los aciertos seguidos suman combo. 45 s por equipo. *Bonus opcional: Tabú de Políticas* |
+| 🎣 **Puerto Verde** · *Caza de Anzuelos* | 6′ | Los mensajes flotan en el mar. Hay que tocar **solo las estafas**: tocar un mensaje real resta puntos. 30 s por equipo |
+| ⚖️ **Isla Gradiente** · *El Consejo* | 10′ | Un equipo defiende **NO VIOLATION** y otro **REMOVE**. El **aplausómetro** escucha al público por el micrófono y decide quién convenció más. Luego se revela la decisión correcta |
+| 🔗 **Torre Espiral** · *Rompe la Cadena* | 7′ | Un rumor salta de usuario en usuario por una red animada. Hay que verificar usuarios con energía limitada para frenarlo. 30 s por equipo. *Bonus opcional: Teléfono Viral* |
+| 🔦 **Nebulosa Horizon** · *Escáner de Privacidad* | 7′ | Con una linterna se recorre un perfil oculto para encontrar los datos expuestos. Después, todos los equipos compiten por abrir la bóveda adivinando la contraseña |
+| 🤝 Mercado de Pistas + ⚖️ Acusación + 🎭 Revelación | 5–6′ | Negociar pistas (¡o mentir!), acusar en secreto y revelar al culpable (+500 ❤️) |
 
-Las misiones se pueden jugar en cualquier orden. El reloj de la barra superior marca el tiempo total y se pone amarillo al pasar los 45 minutos.
-
----
+> 🎤 **Aplausómetro:** el navegador pedirá permiso para usar el micrófono. Si no hay micrófono o no se da el permiso, la persona moderadora elige al ganador con dos botones.
 
 ## 🔒 La mecánica del misterio
 
 - Al empezar, el juego elige **al azar** al culpable entre los 6 sospechosos. Cada partida es distinta y nadie, ni el moderador, sabe quién es.
-- Cada misión entrega **1 pista secreta** al equipo con más Likes en esa misión. Si hay empate, el moderador puede elegir varios equipos.
+- Cada misión entrega **1 pista secreta** al equipo con más corazones en esa misión. Si hay empate, el moderador puede elegir varios equipos.
 - Al entregar la pista, el juego pide que **todos se den vuelta 🙈** menos el equipo ganador. La pista aparece 20 segundos y luego se "quema".
 - Cada pista descarta a un inocente. Se refiere a su **accesorio, coartada, manía o color de ropa**, así que hay que leer bien las fichas de los sospechosos.
-- Con las 5 pistas solo queda un sospechoso posible. Como cada equipo tiene solo algunas, en el **Mercado de Pistas** deben compartir, intercambiar, vender por Likes... o **mentir**. Esto conecta con la reflexión final: *verifica tus fuentes*.
-- Acusar correctamente da **+300 ❤️**.
+- Con las 5 pistas solo queda un sospechoso posible. Como cada equipo tiene solo algunas, en el **Mercado de Pistas** deben compartir, intercambiar, vender por corazones... o **mentir**. Esto conecta con la reflexión final: *verifica tus fuentes*.
+- Acusar correctamente da **+500 ❤️**.
 
 ---
 
 ## 🎛️ Consejos para la persona moderadora
 
-- **Puntos:** toca la ficha de cualquier equipo en la barra inferior para sumar o restar Likes a mano (bonos, penalizaciones, ventas de pistas).
-- **Temporizadores:** todos tienen ⏯ pausa, **+15s** y ⏭ terminar ya.
+- **Puntos:** toca la ficha de cualquier equipo en la barra inferior para sumar o restar corazones a mano (bonos, penalizaciones, ventas de pistas).
+- **Temporizadores:** todos tienen ⏯ pausa, **+15s** y ⏭ terminar ya. En los minijuegos, el botón ⏭ de la esquina termina el turno.
+- **Teclado:** la barra espaciadora o Enter avanzan las pantallas de "¡Jugar!" y de la historia.
 - **🕵️ Sospechosos** (barra superior): abre la rueda de sospechosos en cualquier momento. Con ✕ se descartan sospechosos en pantalla.
 - **☰ Menú:** ir al mapa, ver reglas, imprimir la hoja del detective, saltar al Mercado (si se acaba el tiempo) o empezar una nueva partida.
-- **Si hay poco tiempo:** en el Consejo jueguen 2 casos en vez de 3, y en el Tabú bajen el turno con ⏭.
-- **Si sobra tiempo:** en el Teléfono Viral se puede jugar otra ronda con una noticia distinta.
+- **Si hay poco tiempo:** en el Consejo jueguen 2 casos en vez de 3, y omitan las rondas bonus.
+- **Si sobra tiempo:** jueguen las rondas bonus (Tabú de Políticas y Teléfono Viral).
+- **Decisiones:** si tu equipo usa otros nombres (por ejemplo, DELETE o IGNORE), cámbialos en `DECISIONS`, en `js/data.js`.
 - Cierren con la pantalla final de los **5 valores** e inviten a comentar: *¿qué fue lo que más les sorprendió?*
 
 ---
 
 ## 🛠️ Personalizar el contenido
 
-Todo el contenido está en **`js/data.js`**: las 18 políticas (`POLICIES`), sospechosos, cartas de Tabú, chats de estafa, casos del Consejo, noticias del Teléfono Viral, el perfil de Toño Turbo y las lecciones. Se puede editar con cualquier editor de texto, sin programar.
+Todo el contenido está en **`js/data.js`**: las 18 políticas (`POLICIES`), las decisiones (`DECISIONS`), las publicaciones del Feed (`FEED_POSTS`), los mensajes del mar (`SEA_MSGS`), sospechosos, cartas de Tabú, casos del Consejo, noticias del Teléfono Viral, el perfil de Toño Turbo y las lecciones. Se puede editar con cualquier editor de texto, sin programar.
 
 ```
 index.html        → estructura de la página
 css/styles.css    → diseño visual
 js/data.js        → TODO el contenido del juego (edítalo aquí)
 js/art.js         → ilustraciones SVG (personajes, islas, cristal)
+js/games.js       → los minijuegos arcade
 js/app.js         → lógica del juego
 ```
 

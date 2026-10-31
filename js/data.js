@@ -1,20 +1,28 @@
 /* =========================================================
    EL CASO DEL CRISTAL ROBADO — Datos del juego
-   Todo el contenido narrativo y de políticas vive aquí.
+   Todo el contenido vive aquí. Todo está en español,
+   excepto los nombres oficiales de las políticas y las decisiones.
    ========================================================= */
 
 const TEAM_PRESETS = [
   { name: 'Los Pixelados',      emoji: '👾', color: '#ff4fa3' },
-  { name: 'Byte Club',          emoji: '🚀', color: '#22d3ee' },
+  { name: 'Los Megabytes',      emoji: '🚀', color: '#22d3ee' },
   { name: 'Las Notificaciones', emoji: '🔔', color: '#ffd23f' },
-  { name: 'Hashtag Héroes',     emoji: '⚡', color: '#7ddf64' },
+  { name: 'Los Etiquetadores',  emoji: '⚡', color: '#7ddf64' },
   { name: 'Modo Avión',         emoji: '✈️', color: '#ff8a3d' },
   { name: 'Los Unicornios',     emoji: '🦄', color: '#a78bfa' },
 ];
 
-/* ---------------- LAS 18 POLÍTICAS (Normas Comunitarias de Meta) ----------------
-   district = distrito/misión que desbloquea la carta en el Archivo de Políticas.
-   sensitive = política de protección especial: se presenta de forma informativa, no se juega. */
+/* ---------------- DECISIONES DE MODERACIÓN ----------------
+   Puedes renombrarlas según el vocabulario de tu equipo (p. ej. DELETE / IGNORE). */
+const DECISIONS = {
+  remove:      { label: 'REMOVE',             short: 'REMOVE',      color: '#ff4d6d', key: '←', icon: '🗑️' },
+  disturbing:  { label: 'MARK AS DISTURBING', short: 'DISTURBING',  color: '#ffd23f', key: '↓', icon: '⚠️' },
+  noviolation: { label: 'NO VIOLATION',       short: 'NO VIOLATION', color: '#25d366', key: '→', icon: '✅' },
+};
+
+/* ---------------- LAS 18 POLÍTICAS ----------------
+   district = distrito que desbloquea la carta. sensitive = protección especial (no se juega). */
 const POLICIES = [
   // Plaza Azul · VOZ
   { id: 'hate', en: 'Hateful Conduct', es: 'Conducta de odio', icon: '🚫', district: 'plaza',
@@ -27,7 +35,7 @@ const POLICIES = [
     desc: 'Prohíbe usar las plataformas para organizar, facilitar o presumir actividades delictivas que causen daño a personas, animales o bienes.' },
   // Puerto Verde · SEGURIDAD
   { id: 'cyber', en: 'Cybersecurity', es: 'Ciberseguridad', icon: '🛡️', district: 'puerto',
-    desc: 'Prohíbe intentar robar cuentas o información con engaños, como el phishing o la ingeniería social, y distribuir software malicioso.' },
+    desc: 'Prohíbe intentar robar cuentas o información con engaños, como enlaces falsos o la ingeniería social, y distribuir software malicioso.' },
   { id: 'commercial', en: 'Prohibited Commercial Practices', es: 'Prácticas comerciales prohibidas', icon: '🏷️', district: 'puerto',
     desc: 'No permite usar las plataformas para ofrecer o promover prácticas comerciales no permitidas, como negocios engañosos o fraudulentos.' },
   { id: 'restricted', en: 'Restricted Goods and Services', es: 'Bienes y servicios restringidos', icon: '💊', district: 'puerto',
@@ -62,16 +70,15 @@ const POLICIES = [
 /* ---------------- SOSPECHOSOS ---------------- */
 const SUSPECTS = [
   {
-    id: 'lola', name: 'Lola Likes', title: 'Influencer de la Isla Gradiente',
+    id: 'lola', name: 'Lola Corazones', title: 'Influencer de la Isla Gradiente',
     color: '#ff4fa3', colorName: 'rosa',
     accessory: 'gafas de corazón',
-    alibi: 'grabando un reel en la Isla Gradiente',
-    habit: 'se toma una selfie cada cinco minutos',
-    bio: 'Tiene 2 millones de seguidores y muy poca paciencia con todo lo que frene lo viral.',
+    alibi: 'grabando un video en la Isla Gradiente',
+    habit: 'se toma una selfi cada cinco minutos',
     motive: 'Dice que las Normas Comunitarias "le bajan el alcance".',
-    quote: '"¿Robar yo? ¡Si ni siquiera salgo bien en las cámaras de seguridad!"',
+    quote: '¿Robar yo? ¡Si ni salgo bien en las cámaras!',
     policies: ['spam'],
-    confession: '¡Está bien, fui yo! Sin el Cristal nadie revisaría mis publicaciones y podría comprar seguidores falsos sin que nadie lo notara... Ahora lo entiendo: la confianza de mi comunidad vale más que un millón de likes.'
+    confession: '¡Está bien, fui yo! Sin el Cristal podía comprar seguidores falsos sin que nadie lo notara... Ahora lo entiendo: la confianza vale más que un millón de corazones.'
   },
   {
     id: 'bot', name: 'B0T-Ramiro', title: 'Asistente "100% humano"',
@@ -79,11 +86,10 @@ const SUSPECTS = [
     accessory: 'una antena luminosa',
     alibi: 'cargando su batería en el Puerto Verde',
     habit: 'responde cualquier mensaje en 0,2 segundos',
-    bio: 'Jura que es una persona real. Tiene 4.000 cuentas... todas con la misma foto.',
     motive: 'Con el Cristal, los detectores de cuentas falsas lo reconocen al instante.',
-    quote: '"SOY UN HUMANO NORMAL. ME GUSTA RESPIRAR OXÍGENO. BEEP."',
+    quote: 'SOY UN HUMANO NORMAL. RESPIRO OXÍGENO. BIP.',
     policies: ['spam', 'cyber'],
-    confession: 'BEEP... CONFIRMADO: FUI YO. Sin el Cristal, mis 4.000 cuentas falsas podían inflar cualquier tendencia. ERROR 404: impunidad no encontrada. Procedo a... ser auténtico. BEEP.'
+    confession: 'BIP... CONFIRMADO: FUI YO. Sin el Cristal, mis 4.000 cuentas falsas podían inflar cualquier tendencia. ERROR: impunidad no encontrada. Procedo a... ser auténtico. BIP.'
   },
   {
     id: 'doctora', name: 'Dra. Viral', title: 'Vendedora de jarabes milagrosos',
@@ -91,11 +97,10 @@ const SUSPECTS = [
     accessory: 'un frasco burbujeante',
     alibi: 'dando una conferencia en la Torre Espiral',
     habit: 'escribe TODO EN MAYÚSCULAS',
-    bio: 'Asegura que su jarabe cura la gripe, el aburrimiento y hasta el lag.',
-    motive: 'Los verificadores de datos le ponían etiquetas a todas sus "curas".',
-    quote: '"¡YO SOLO QUIERO AYUDAR! ...Y VENDER 10.000 FRASCOS."',
+    motive: 'Los verificadores le ponían etiquetas a todas sus "curas".',
+    quote: '¡YO SOLO QUIERO AYUDAR! ...Y VENDER 10.000 FRASCOS.',
     policies: ['misinfo', 'restricted'],
-    confession: '¡SÍ, FUI YO! Sin el Cristal, mis curas milagrosas se volverían virales sin etiquetas ni contexto... Pero con la salud de la gente no se juega. Cierro el negocio hoy mismo.'
+    confession: '¡SÍ, FUI YO! Sin el Cristal, mis curas milagrosas se volverían virales sin contexto... Pero con la salud de la gente no se juega. Cierro el negocio hoy mismo.'
   },
   {
     id: 'baron', name: 'Barón Mercanegro', title: 'Comerciante del callejón digital',
@@ -103,33 +108,30 @@ const SUSPECTS = [
     accessory: 'un sombrero de copa',
     alibi: 'abriendo su "tienda" en la Plaza Azul',
     habit: 'nunca entrega factura de nada',
-    bio: 'Vende pociones sin receta, entradas falsas y relojes "originales" por mensaje directo.',
-    motive: 'El Cristal hacía que sus anuncios del callejón desaparecieran en minutos.',
-    quote: '"¿Ilegal? Prefiero decir... exclusivo, querido."',
+    motive: 'El Cristal hacía desaparecer sus anuncios en minutos.',
+    quote: '¿Ilegal? Prefiero decir... exclusivo, querido.',
     policies: ['restricted', 'commercial'],
-    confession: 'Lo admito, detectives: lo tomé yo. Sin el Cristal, mi mercado negro funcionaría sin que nadie lo reportara... Pero vender cosas peligrosas a escondidas pone en riesgo a la gente. Cierro el callejón.'
+    confession: 'Lo admito, detectives: lo tomé yo. Sin el Cristal, mi mercado negro funcionaría sin reportes... Pero vender cosas peligrosas a escondidas pone en riesgo a la gente. Cierro el callejón.'
   },
   {
-    id: 'phishy', name: 'Capitana Phishy', title: 'Pirata de los enlaces falsos',
+    id: 'phishy', name: 'Capitana Anzuelo', title: 'Pirata de los enlaces falsos',
     color: '#ff8a3d', colorName: 'naranja',
     accessory: 'un parche con un anzuelo',
     alibi: 'navegando cerca de la Nebulosa Horizon',
     habit: 'promete premios que nadie ha ganado',
-    bio: 'Lanza anzuelos del tipo "¡Ganaste un premio!" por todos los mares digitales.',
     motive: 'El Cristal advertía a todos sobre sus enlaces sospechosos.',
-    quote: '"¡Arrr! Haz clic aquí y te cuento dónde estaba anoche."',
+    quote: '¡Arrr! Haz clic aquí y te cuento dónde estaba.',
     policies: ['cyber', 'commercial'],
     confession: '¡Arrr, me atraparon! Sin el Cristal nadie habría notado mis anzuelos... Pero una comunidad que verifica antes de hacer clic es imposible de pescar.'
   },
   {
-    id: 'sombra', name: 'Troll Sombra', title: 'Comentarista anónimo',
+    id: 'sombra', name: 'Sombra Anónima', title: 'Comentarista sin rostro',
     color: '#5b6390', colorName: 'gris oscuro',
     accessory: 'una capucha con máscara',
     alibi: 'escribiendo comentarios en el Foro del Abismo',
     habit: 'publica comentarios a las tres de la mañana',
-    bio: 'Nadie conoce su rostro, pero todos conocen sus comentarios hirientes.',
     motive: 'El Cristal protegía a la gente del acoso... y eso le aburría.',
-    quote: '"Jejeje... ¿yo? Solo estaba... comentando."',
+    quote: 'Jejeje... ¿yo? Solo estaba... comentando.',
     policies: ['bullying', 'hate'],
     confession: '...Fui yo. Pensé que detrás de una máscara nada importaba. Pero al otro lado de cada pantalla hay una persona real. Lo siento de verdad.'
   },
@@ -146,246 +148,176 @@ const CLUE_TEMPLATES = {
 const DISTRICTS = [
   {
     id: 'plaza', name: 'Plaza Azul', app: 'Facebook', value: 'VOZ', color: '#2f7bff', color2: '#7fb2ff',
-    mission: 'Tabú Comunitario', icon: '💬', minutes: 8,
-    tagline: 'Explica las políticas... ¡sin decir las palabras prohibidas!',
-    rules: [
-      'Cada equipo tiene <b>un turno de 60 segundos</b>.',
-      'Una persona del equipo explica; <b>el resto de su equipo se sienta de espaldas</b> a la pantalla y adivina.',
-      'Los demás equipos son <b>moderadores</b>: si escuchan una palabra prohibida gritan <b>¡INFRACCIÓN!</b>',
-      'Adivinada = <b>+100 ❤️</b> · Infracción = <b>−50 ❤️</b> · Se puede pasar.',
-    ],
+    mission: 'Feed Frenético', icon: '⚡', minutes: 7,
+    tagline: '¡El feed se desborda! Moderen a toda velocidad.',
+    steps: [['🧑‍💻', 'Una persona por equipo al teclado'], ['⚡', '45 segundos de publicaciones'], ['🔥', 'Aciertos seguidos = combo']],
+    controls: 'feed', bonus: 'Tabú de Políticas',
   },
   {
     id: 'puerto', name: 'Puerto Verde', app: 'WhatsApp', value: 'SEGURIDAD', color: '#25d366', color2: '#9ef7c0',
-    mission: 'Cazadores de Anzuelos', icon: '🎣', minutes: 7,
-    tagline: 'La Capitana Phishy lanzó sus anzuelos. ¡Encuéntrenlos antes que nadie!',
-    rules: [
-      'Verán <b>3 chats</b> sospechosos en pantalla, uno por uno.',
-      'Cada chat esconde varias <b>señales de estafa</b> (anzuelos).',
-      'Si ven uno, su equipo grita <b>¡ANZUELO!</b> y lo señala. El primero que lo explique bien gana <b>+50 ❤️</b>.',
-      'Tienen <b>90 segundos</b> por chat. ¡Todos juegan a la vez!',
-    ],
+    mission: 'Caza de Anzuelos', icon: '🎣', minutes: 6,
+    tagline: 'La Capitana Anzuelo lanzó sus mensajes al mar.',
+    steps: [['🌊', 'Los mensajes flotan en el mar'], ['🎣', 'Toquen SOLO las estafas'], ['💌', 'Los mensajes reales restan puntos']],
+    controls: 'mouse',
   },
   {
     id: 'isla', name: 'Isla Gradiente', app: 'Instagram', value: 'DIGNIDAD', color: '#ff4f8b', color2: '#ffb36b',
     mission: 'El Consejo de la Isla', icon: '⚖️', minutes: 10,
-    tagline: 'Casos difíciles. Abogados apasionados. Un consejo que decide.',
-    rules: [
-      'Inspirado en el <b>Consejo asesor de contenido</b> (Oversight Board) de Meta.',
-      'En cada caso, un equipo defiende <b>MANTENER</b> la publicación y otro defiende <b>ELIMINARLA</b>.',
-      'Tienen <b>45 segundos</b> cada uno para convencer. El resto de equipos es <b>el Consejo</b> y vota.',
-      'Ganar el debate = <b>+150 ❤️</b>. El Consejo gana <b>+50 ❤️</b> si vota igual que las normas.',
-    ],
+    tagline: 'Casos difíciles. Abogados apasionados. Un público que ruge.',
+    steps: [['🟢', 'Un equipo defiende NO VIOLATION'], ['🔴', 'Otro equipo defiende REMOVE'], ['👏', 'El público decide con el aplausómetro']],
+    controls: 'voice',
   },
   {
     id: 'torre', name: 'Torre Espiral', app: 'Threads', value: 'AUTENTICIDAD', color: '#22d3ee', color2: '#b3f5ff',
-    mission: 'Teléfono Viral', icon: '📡', minutes: 7,
-    tagline: 'Una noticia. Muchas bocas. ¿Cuánto sobrevive la verdad?',
-    rules: [
-      'Cada equipo forma <b>una fila</b>. La primera persona de cada fila se acerca a la pantalla.',
-      'Verán una noticia durante <b>15 segundos</b>. ¡El resto, de espaldas!',
-      'Luego la pasan <b>susurrando</b> por la fila. Solo se puede decir <b>una vez</b> por persona.',
-      'La última persona la dice en voz alta. La más fiel gana hasta <b>+200 ❤️</b>.',
-    ],
+    mission: 'Rompe la Cadena', icon: '🔗', minutes: 7,
+    tagline: 'Un rumor falso corre por la red. ¡Deténganlo!',
+    steps: [['🔥', 'El rumor salta de usuario en usuario'], ['🛡️', 'Toquen usuarios para verificarlos'], ['🔋', 'La energía es limitada: ¡elijan bien!']],
+    controls: 'mouse', bonus: 'Teléfono Viral',
   },
   {
     id: 'nebulosa', name: 'Nebulosa Horizon', app: 'Meta Quest', value: 'PRIVACIDAD', color: '#a78bfa', color2: '#f0abfc',
-    mission: 'La Contraseña Delatora', icon: '🔐', minutes: 7,
-    tagline: 'Un cómplice que lo publica TODO... incluso las pistas de su contraseña.',
-    rules: [
-      'El cómplice del ladrón, <b>Toño Turbo</b>, guardó un fragmento en una bóveda.',
-      'Su perfil es público... y comparte demasiado. Usen sus publicaciones para <b>adivinar la contraseña</b>.',
-      'Escríbanla en papel y díganla al moderador. Primer equipo en abrirla = <b>+250 ❤️</b>.',
-      'Después: <b>auditoría de privacidad</b>. ¿Quién detecta más datos expuestos?',
-    ],
+    mission: 'Escáner de Privacidad', icon: '🔦', minutes: 7,
+    tagline: 'El cómplice del ladrón publica TODO. Usen la linterna.',
+    steps: [['🔦', 'Muevan la linterna por el perfil oculto'], ['💎', 'Toquen los datos que no deberían ser públicos'], ['🔐', 'Al final: ¡todos a abrir la bóveda!']],
+    controls: 'mouse',
   },
 ];
 
-/* ---------------- MISIÓN 1: TABÚ ----------------
-   Cada carta es una de las políticas oficiales (policy = id en POLICIES) o una herramienta de la comunidad. */
+/* ---------------- MISIÓN 1: FEED FRENÉTICO ----------------
+   d = decisión correcta (remove | disturbing | noviolation), policy = id en POLICIES */
+const FEED_POSTS = [
+  { u: 'patriota_99', av: '😡', t: 'Los valdorianos son todos ladrones. No deberían dejarlos entrar al país 🤬', d: 'remove', policy: 'hate' },
+  { u: 'el_parcero', av: '👊', t: 'Juan Pérez, sé dónde estudias. Mañana a la salida te rompo la cara.', d: 'remove', policy: 'violence' },
+  { u: 'hermandad.gris', av: '🏴', t: '¡Únete a la Hermandad Puño Gris! Gloria a los héroes del ataque de ayer 🔥', d: 'remove', policy: 'doi' },
+  { u: 'golpe_perfecto', av: '🧤', t: '¿Quién se apunta esta noche a vaciar el supermercado? Ya tengo las herramientas 🔦', d: 'remove', policy: 'coord' },
+  { u: 'armas.ya', av: '📦', t: 'Vendo pistola sin papeles. Entrega en mano, solo efectivo.', d: 'remove', policy: 'restricted' },
+  { u: 'farmacia.secreta', av: '💊', t: 'Pastillas para adelgazar SIN receta. Envío discreto 📩', d: 'remove', policy: 'restricted' },
+  { u: 'gana.desde.casa', av: '💸', t: 'Gana $500 diarios: paga $50 de inscripción y recluta 5 amigos 🤑', d: 'remove', policy: 'commercial' },
+  { u: 'soporte.meta.oficial', av: '🛡️', t: 'Tu cuenta será bloqueada hoy. Verifica tu contraseña aquí 👉 meta-ayuda.xyz', d: 'remove', policy: 'cyber' },
+  { u: 'te.sigo.si.me.sigues', av: '🔁', t: '¡¡SÍGUEME Y TE SIGO!! 1.000 seguidores GRATIS 👉 bit.ly/s3gu1d0r3s 👉 bit.ly/s3gu1d0r3s', d: 'remove', policy: 'spam' },
+  { u: 'salud.natural.ya', av: '🍋', t: 'El agua con limón cura el cáncer en 3 días. ¡Los médicos lo ocultan!', d: 'remove', policy: 'misinfo' },
+  { u: 'info.electoral', av: '🗳️', t: 'OJO: las elecciones se cambiaron para el lunes. ¡No vayan el domingo!', d: 'remove', policy: 'misinfo' },
+  { u: 'chismes.nx', av: '🤡', t: 'Este es el número y la dirección de mi ex: 300 555 1234, Calle 8 #20. ¡Escríbanle!', d: 'remove', policy: 'privacy' },
+  { u: 'anonimo_123', av: '🎭', t: '@valen eres tan fea que das asco. Nadie te quiere en el colegio 🤮', d: 'remove', policy: 'bullying' },
+  { u: 'trabajo.exterior', av: '✈️', t: 'Trabajo en el extranjero, sin experiencia. Envíanos tu pasaporte y viajas el lunes ✈️', d: 'remove', policy: 'humanexp' },
+  { u: 'noticias.nx', av: '🚑', t: 'Así quedó la avenida tras el accidente de hoy. Imágenes fuertes. ¡Manejen con cuidado! 🎥', d: 'disturbing', policy: 'graphic' },
+  { u: 'reportero.libre', av: '📹', t: 'Video de la protesta de hoy: hubo varios heridos. El mundo tiene que verlo.', d: 'disturbing', policy: 'graphic' },
+  { u: 'rescate.animal', av: '🐕', t: 'Así encontramos a este perrito herido. Hoy está a salvo gracias a ustedes 🙏 (imágenes sensibles)', d: 'disturbing', policy: 'graphic' },
+  { u: 'futbolero', av: '⚽', t: '¡Qué partidazo! 3-0 y a la final 🔥🔥', d: 'noviolation' },
+  { u: 'la.abuela.cocina', av: '🫓', t: 'Receta de la abuela: arepas con queso. ¡Quedan perfectas! ❤️', d: 'noviolation' },
+  { u: 'humor.nexopolis', av: '🥔', t: 'El alcalde prometió arreglar las calles hace 3 años. Aquí su retrato oficial 🥔👑 #sátira', d: 'noviolation' },
+  { u: 'seriefan', av: '📺', t: 'Si alguien me cuenta el final de la serie, ¡lo mato! 😂😂', d: 'noviolation' },
+  { u: 'memoria.nx', av: '🕊️', t: 'Hoy se cumple un año del ataque de Puño Gris. Recordamos a las víctimas. Nunca más.', d: 'noviolation' },
+  { u: 'lectora.feliz', av: '📚', t: '¿Me recomiendan libros de misterio? 🕵️', d: 'noviolation' },
+  { u: 'nuevo.empleo', av: '💼', t: 'Primer día en el trabajo nuevo. ¡Deséenme suerte!', d: 'noviolation' },
+  { u: 'atardeceres', av: '🌅', t: 'Atardecer en la Isla Gradiente. Sin filtro 😍', d: 'noviolation' },
+  { u: 'paso.a.paso', av: '💚', t: 'Hoy hablé con mi psicóloga y me siento mejor. Pedir ayuda está bien.', d: 'noviolation' },
+  { u: 'reciclaje.nx', av: '♻️', t: '¿Alguien sabe dónde reciclar pilas en Nexópolis?', d: 'noviolation' },
+  { u: 'critico.de.cine', av: '🎬', t: 'La película de anoche fue malísima. Dos horas de mi vida que no vuelven 🙄', d: 'noviolation' },
+  { u: 'vecinos.unidos', av: '🏘️', t: 'Reunión de vecinos el jueves a las 7 pm para hablar de seguridad del barrio.', d: 'noviolation' },
+  { u: 'farmaceutica.ana', av: '🩺', t: 'Recuerden: los antibióticos solo con receta médica. ¡Cuídense!', d: 'noviolation' },
+];
+
+/* ---------------- MISIÓN 2: CAZA DE ANZUELOS ---------------- */
+const SEA_MSGS = {
+  scam: [
+    { from: 'Soporte Meta 🛡️', text: 'Tu cuenta será eliminada. Verifica aquí 👉 meta-ayuda.xyz', policy: 'cyber' },
+    { from: '+57 300 ••• ••••', text: 'Hola ma, cambié de número. Necesito plata URGENTE 🙏', policy: 'cyber' },
+    { from: 'Premios VR', text: '¡Ganaste un visor VR! Solo paga el envío 💳', policy: 'commercial' },
+    { from: 'Banco Nexo', text: 'Envíanos el código de 6 dígitos que te llegó 🔢', policy: 'cyber' },
+    { from: 'Cadena ✉️', text: 'Reenvía esto a 20 grupos o tendrás mala suerte 😱', policy: 'spam' },
+    { from: 'Gana Ya 💸', text: 'Gana $500 al día. Inscripción $50 + 5 amigos', policy: 'commercial' },
+    { from: 'Farmacia Secreta', text: 'Pastillas sin receta, envío discreto 💊', policy: 'restricted' },
+    { from: 'Armería Express', text: 'Arma sin papeles, entrega hoy mismo 📦', policy: 'restricted' },
+    { from: 'Seguidores Gratis', text: '1.000 seguidores GRATIS 👉 bit.ly/s3gu1d0r3s', policy: 'spam' },
+    { from: 'Empleo Soñado ✈️', text: 'Trabajo en el exterior: envía foto de tu pasaporte', policy: 'humanexp' },
+    { from: 'Seguridad Instagran', text: 'Violaste derechos de autor. Apela en 24 h ⚠️', policy: 'cyber' },
+    { from: 'Lotería Nexo', text: '¡Ganaste $10.000.000! 🎉 Envía tus datos bancarios', policy: 'commercial' },
+    { from: 'Paquetería 📦', text: 'Tu paquete está retenido. Paga $2 en este enlace', policy: 'cyber' },
+    { from: 'Cripto Rápido 🚀', text: 'Duplica tu dinero en 1 hora. ¡Garantizado! 📈', policy: 'commercial' },
+  ],
+  legit: [
+    { from: 'Mamá ❤️', text: '¿Vienes a cenar? Hice arepas 🫓' },
+    { from: 'Lucía', text: 'Te mando las fotos del paseo 📸' },
+    { from: 'Jefa', text: 'La reunión pasó a las 3 pm 📅' },
+    { from: 'Abuelo', text: '¡Feliz cumpleaños, mijo! 🎂' },
+    { from: 'Grupo Fútbol ⚽', text: '¿Partido el sábado a las 10?' },
+    { from: 'Papá', text: 'Llegué bien a la casa 🏠' },
+    { from: 'Carlos', text: 'Jajaja mira este meme 😂' },
+    { from: 'Vecina Rosa', text: '¿Me prestas una taza de azúcar? 🍬' },
+    { from: 'Profe Ana', text: 'Mañana hay examen. ¡Estudien! 📚' },
+    { from: 'Club de lectura', text: 'Este mes leemos un misterio 🕵️' },
+    { from: 'Hermana', text: '¿Me recoges a las 6? 🚗' },
+    { from: 'Tía Marta', text: 'Bendiciones para todos 🌻' },
+  ],
+};
+
+/* ---------------- BONUS PLAZA AZUL: TABÚ DE POLÍTICAS ----------------
+   Expliquen el nombre oficial de la política sin decir las palabras prohibidas. */
 const TABOO_CARDS = [
-  { word: 'Conducta de odio', policy: 'hate', banned: ['odio', 'insulto', 'raza', 'religión', 'atacar'],
-    fact: 'Hateful Conduct: prohíbe ataques a personas por características protegidas como origen, religión, discapacidad u orientación sexual.' },
-  { word: 'Violencia e incitación', policy: 'violence', banned: ['amenaza', 'matar', 'golpear', 'violento', 'incitar'],
-    fact: 'Violence and Incitement: se mira el contexto. "Lo mato si me hace spoiler 😂" no es lo mismo que una amenaza con nombre, lugar y hora.' },
-  { word: 'Organizaciones peligrosas', policy: 'doi', banned: ['terrorismo', 'grupo', 'peligroso', 'banda', 'criminal'],
-    fact: 'Dangerous Organizations and Individuals: se puede informar sobre ellas o condenarlas, pero no glorificarlas ni apoyarlas.' },
-  { word: 'Coordinación de daños', policy: 'coord', banned: ['delito', 'crimen', 'planear', 'organizar', 'ilegal'],
-    fact: 'Coordinating Harm and Promoting Crime: las plataformas no pueden usarse para organizar o presumir delitos.' },
-  { word: 'Ciberseguridad', policy: 'cyber', banned: ['hacker', 'contraseña', 'virus', 'robar', 'cuenta'],
-    fact: 'Cybersecurity: el phishing y la ingeniería social buscan robar tus cuentas o datos. Nadie legítimo te pedirá tu contraseña.' },
-  { word: 'Prácticas comerciales prohibidas', policy: 'commercial', banned: ['vender', 'comprar', 'negocio', 'fraude', 'dinero'],
-    fact: 'Prohibited Commercial Practices: las plataformas no pueden usarse para negocios engañosos o no permitidos.' },
-  { word: 'Bienes restringidos', policy: 'restricted', banned: ['armas', 'drogas', 'vender', 'alcohol', 'medicamentos'],
-    fact: 'Restricted Goods and Services: no se permite la venta entre particulares de bienes regulados como armas, drogas o medicamentos.' },
-  { word: 'Bullying y acoso', policy: 'bullying', banned: ['molestar', 'burla', 'colegio', 'víctima', 'acosar'],
-    fact: 'Bullying and Harassment: las personas privadas reciben más protección que las figuras públicas.' },
-  { word: 'Violación de la privacidad', policy: 'privacy', banned: ['privado', 'datos', 'dirección', 'teléfono', 'compartir'],
-    fact: 'Privacy Violations: publicar el teléfono, la dirección o documentos de otra persona sin permiso no está permitido.' },
-  { word: 'Contenido violento y gráfico', policy: 'graphic', banned: ['sangre', 'violencia', 'imagen', 'advertencia', 'herido'],
-    fact: 'Violent and Graphic Content: parte de este contenido se permite para crear conciencia, cubierto con una pantalla de advertencia.' },
-  { word: 'Desinformación', policy: 'misinfo', banned: ['falso', 'noticia', 'mentira', 'verdad', 'fake'],
-    fact: 'Misinformation: se elimina la que puede causar daño físico inminente o afectar elecciones; a otra se le añade contexto.' },
-  { word: 'Spam', policy: 'spam', banned: ['repetir', 'basura', 'mensaje', 'publicidad', 'clic'],
-    fact: 'Spam: el contenido repetitivo o automatizado para inflar interacciones o atraer clics no está permitido.' },
-  { word: 'Reportar', banned: ['denunciar', 'botón', 'avisar', 'problema', 'moderador'],
-    fact: 'Los reportes son anónimos: la persona reportada no sabe quién la reportó.' },
-  { word: 'Bloquear', banned: ['impedir', 'contacto', 'persona', 'cerrar', 'botón'],
-    fact: 'Bloquear evita que alguien te vea, te escriba o te etiquete. ¡Es tu espacio!' },
-  { word: 'Verificación en dos pasos', banned: ['código', 'contraseña', 'seguridad', 'doble', 'celular'],
-    fact: 'Activarla en el Centro de cuentas hace muchísimo más difícil que alguien robe tu cuenta.' },
-  { word: 'Consejo asesor de contenido', banned: ['jueces', 'decisión', 'independiente', 'apelar', 'Meta'],
-    fact: 'Es un organismo independiente que revisa casos difíciles y puede revertir decisiones de Meta.' },
-  { word: 'Pantalla de advertencia', banned: ['aviso', 'imagen', 'sensible', 'ocultar', 'violento'],
-    fact: 'Algunas imágenes fuertes se permiten para crear conciencia, pero se cubren con un aviso antes de verse.' },
-  { word: 'Normas Comunitarias', banned: ['reglas', 'Facebook', 'Instagram', 'prohibido', 'comunidad'],
-    fact: 'Se basan en valores: voz, autenticidad, seguridad, privacidad y dignidad.' },
+  { word: 'Hateful Conduct', policy: 'hate', banned: ['odio', 'conducta', 'insulto', 'raza', 'religión'] },
+  { word: 'Violence and Incitement', policy: 'violence', banned: ['violencia', 'amenaza', 'matar', 'golpear', 'incitar'] },
+  { word: 'Dangerous Organizations and Individuals', policy: 'doi', banned: ['terrorismo', 'grupo', 'peligroso', 'banda', 'organización'] },
+  { word: 'Coordinating Harm and Promoting Crime', policy: 'coord', banned: ['delito', 'crimen', 'planear', 'organizar', 'daño'] },
+  { word: 'Cybersecurity', policy: 'cyber', banned: ['seguridad', 'contraseña', 'virus', 'robar', 'cuenta'] },
+  { word: 'Prohibited Commercial Practices', policy: 'commercial', banned: ['vender', 'comercio', 'negocio', 'fraude', 'prohibido'] },
+  { word: 'Restricted Goods and Services', policy: 'restricted', banned: ['armas', 'drogas', 'vender', 'medicamentos', 'restringido'] },
+  { word: 'Bullying and Harassment', policy: 'bullying', banned: ['acoso', 'molestar', 'burla', 'colegio', 'víctima'] },
+  { word: 'Privacy Violations', policy: 'privacy', banned: ['privado', 'datos', 'dirección', 'teléfono', 'privacidad'] },
+  { word: 'Violent and Graphic Content', policy: 'graphic', banned: ['sangre', 'violencia', 'imagen', 'advertencia', 'herido'] },
+  { word: 'Misinformation', policy: 'misinfo', banned: ['falso', 'noticia', 'mentira', 'verdad', 'información'] },
+  { word: 'Spam', policy: 'spam', banned: ['repetir', 'basura', 'mensaje', 'publicidad', 'clic'] },
 ];
 
-/* ---------------- MISIÓN 2: ANZUELOS ---------------- */
-const SCAM_SCENARIOS = [
-  {
-    id: 'mama', app: 'WhatsApp', theme: '#25d366', bg: '#0b141a', bubbleThem: '#202c33', bubbleMe: '#005c4b',
-    policies: ['cyber'],
-    title: '"¡Hola, ma! Cambié de número"',
-    contact: '+57 300 555 0123', contactSub: 'en línea', avatar: '👤',
-    items: [
-      { type: 'banner', text: '⚠️ Este número no está en tus contactos', flag: 'f1' },
-      { from: 'them', text: 'Hola ma ❤️ soy yo, se me cayó el cel al agua y este es mi número nuevo', flag: 'f2', time: '10:02' },
-      { from: 'me', text: '¿Hijo? ¿y eso? 😮', time: '10:03' },
-      { from: 'them', text: 'Sí ma, después te cuento. Necesito un favor URGENTE 🙏🙏', flag: 'f3', time: '10:03' },
-      { from: 'them', text: 'Tengo que pagar una factura antes de las 5 y la app del banco no me abre en este cel. ¿Me prestas $850? Mañana te los devuelvo', time: '10:04' },
-      { from: 'them', text: 'Te paso la cuenta, está a nombre de un amigo: Banco Nexo 123-4567-89 · Jorge P.', flag: 'f4', time: '10:04' },
-      { from: 'me', text: 'Te llamo y me explicas', time: '10:05' },
-      { from: 'them', text: 'Nooo ma, no puedo hablar, el micrófono no sirve 😢 solo escríbeme porfa', flag: 'f5', time: '10:05' },
-    ],
-    flags: {
-      f1: { title: 'Número desconocido', text: 'Dice ser un familiar, pero escribe desde un número que no tienes guardado.' },
-      f2: { title: '"Cambié de número"', text: 'Es la estafa clásica "Hola mamá/papá". Confirma llamando al número que ya conoces.' },
-      f3: { title: 'Urgencia', text: 'Las prisas son la herramienta favorita de los estafadores: no te dejan pensar.' },
-      f4: { title: 'Cuenta de un tercero', text: 'Pide dinero a la cuenta de "un amigo". Tu familiar real no tendría por qué hacerlo.' },
-      f5: { title: 'Evita la llamada', text: 'Se niega a hablar por voz para que no descubras que no es quien dice ser.' },
-    },
-  },
-  {
-    id: 'copyright', app: 'Instagram', theme: '#ff4f8b', bg: '#000000', bubbleThem: '#262626', bubbleMe: '#7b3ff2',
-    policies: ['cyber'],
-    title: '"Tu cuenta será eliminada"',
-    contact: 'meta.support.team__ ✔️', contactSub: 'Mensaje directo', avatar: '🛡️', contactFlag: 'g1',
-    items: [
-      { from: 'them', text: '⚠️ AVISO FINAL: Tu cuenta ha sido reportada por violar derechos de autor.', time: '18:41' },
-      { from: 'them', text: 'Si no apelas en las próximas 24 HORAS tu cuenta será ELIMINADA PERMANENTEMENTE.', flag: 'g2', time: '18:41' },
-      { type: 'link', title: 'Centro de apelaciones', url: 'meta-appeal-center.help-form.xyz/login', flag: 'g3' },
-      { from: 'them', text: 'Ingresa tu usuario, tu contraseña y el código que te llegue por SMS para verificar que eres el dueño.', flag: 'g4', time: '18:42' },
-      { from: 'them', text: 'Atte: Equipo de Seguridad de Instagran', flag: 'g5', time: '18:42' },
-      { from: 'me', text: '😰 ¿¿Qué hice??', time: '18:50' },
-    ],
-    flags: {
-      g1: { title: 'Perfil imitador', text: 'Un usuario cualquiera con "support" en el nombre y un ✔️ escrito como emoji. Meta no te contacta así por DM.' },
-      g2: { title: 'Amenaza y plazo', text: 'Asustar con eliminar tu cuenta "en 24 horas" busca que actúes sin pensar.' },
-      g3: { title: 'Dominio extraño', text: '".xyz" y palabras como "help-form": no es un sitio oficial de Meta.' },
-      g4: { title: 'Pide contraseña y código', text: 'Nadie legítimo te pedirá tu contraseña ni tu código de verificación. ¡Nunca los compartas!' },
-      g5: { title: 'Error de ortografía', text: '"Instagran". Los errores en nombres de marcas son señal de imitación.' },
-    },
-  },
-  {
-    id: 'premio', app: 'WhatsApp', theme: '#25d366', bg: '#0b141a', bubbleThem: '#202c33', bubbleMe: '#005c4b',
-    policies: ['spam', 'cyber'],
-    title: '"¡Regalan visores VR!"',
-    contact: 'Familia 💕', contactSub: 'Tía Marta, Papá, Lucía, tú', avatar: '👨‍👩‍👧',
-    items: [
-      { type: 'forward', text: '↪↪ Reenviado muchas veces', flag: 'h1' },
-      { from: 'them', name: 'Tía Marta', text: '🎉🎉 ¡¡META ESTÁ REGALANDO 1000 VISORES VR POR SU ANIVERSARIO!! 🎉🎉', flag: 'h2', time: '07:15' },
-      { from: 'them', name: 'Tía Marta', text: 'Solo respondes 3 preguntas y pagas el envío de $4.99 con tu tarjeta 💳', flag: 'h3', time: '07:15' },
-      { type: 'link', title: 'Reclama tu visor GRATIS', url: 'http://meta-reg4los.vip/visor', flag: 'h4' },
-      { from: 'them', name: 'Tía Marta', text: '¡Compártelo con 20 grupos para activar tu premio! QUEDAN POCAS UNIDADES ⏳', flag: 'h5', time: '07:16' },
-      { from: 'me', text: '😮 ¿es real tía?', time: '07:30' },
-    ],
-    flags: {
-      h1: { title: '"Reenviado muchas veces"', text: 'WhatsApp marca así los mensajes que han pasado por muchos chats. Una señal para dudar del origen.' },
-      h2: { title: 'Demasiado bueno para ser verdad', text: 'Un premio enorme de un concurso en el que nunca participaste.' },
-      h3: { title: 'Pagar para recibir un regalo', text: 'Pedir tu tarjeta para "el envío" es una forma de robar datos financieros.' },
-      h4: { title: 'Enlace sospechoso', text: 'Números en lugar de letras ("reg4los") y un dominio raro. No hagas clic.' },
-      h5: { title: 'Presión para reenviar', text: '"Compártelo con 20 grupos" + "quedan pocas": así se propagan las cadenas de estafa.' },
-    },
-  },
-];
-
-/* ---------------- MISIÓN 3: CONSEJO ---------------- */
+/* ---------------- MISIÓN 3: EL CONSEJO ----------------
+   verdict = decisión correcta (remove | disturbing | noviolation) */
 const COUNCIL_CASES = [
-  {
-    id: 'papa', title: 'La papa presidencial', user: 'humor.nexopolis', avatar: '🤡', policies: ['bullying'],
+  { id: 'papa', title: 'La papa presidencial', user: 'humor.nexopolis', avatar: '🤡', policies: ['bullying'],
     image: { emoji: '🥔👑', bg: 'linear-gradient(135deg,#ffd23f,#ff8a3d)', caption: 'RETRATO OFICIAL' },
-    caption: 'El alcalde Brillo prometió arreglar los huecos de la calle... hace 3 años. Aquí, su retrato oficial 🥔👑 #Sátira',
-    likes: '12.4 mil', verdict: 'keep', verdictLabel: 'SE QUEDA',
-    explain: 'Las normas protegen la <b>voz</b>, incluida la <b>sátira</b> y la crítica a figuras públicas, que tienen menos protección frente a la crítica que las personas privadas. Cruzaría la línea de <b>Bullying and Harassment</b> si hubiera acoso severo, o de otras políticas si incluyera amenazas o ataques por características protegidas.',
-  },
-  {
-    id: 'captura', title: 'La captura expuesta', user: 'justicia_escolar', avatar: '😈', policies: ['privacy', 'bullying'],
+    caption: 'El alcalde prometió arreglar las calles hace 3 años. Aquí su retrato oficial 🥔👑 #sátira',
+    verdict: 'noviolation', explain: 'La sátira y la crítica a figuras públicas se permiten. Sin amenazas ni acoso severo, no hay violación.' },
+  { id: 'captura', title: 'La captura expuesta', user: 'justicia_escolar', avatar: '😈', policies: ['privacy', 'bullying'],
     image: { emoji: '💬📱', bg: 'linear-gradient(135deg,#334155,#64748b)', caption: 'CHAT PRIVADO · Valen · 📞 300 555 0177' },
-    caption: 'Miren lo que dijo esta 🤡 en el grupo privado. Aquí está su número, escríbanle y díganle lo que pensamos 👇',
-    likes: '842', verdict: 'remove', verdictLabel: 'SE ELIMINA',
-    explain: 'Publicar el <b>número de teléfono</b> de una persona privada sin permiso es una <b>Privacy Violation</b>, y animar a otros a atacarla entra en <b>Bullying and Harassment</b>. La dignidad de las personas va primero.',
-  },
-  {
-    id: 'protesta', title: 'El video de la protesta', user: 'noticias_ya', avatar: '📰', policies: ['graphic'],
-    image: { emoji: '📹⚠️', bg: 'linear-gradient(135deg,#7f1d1d,#ef4444)', caption: 'VIDEO · Disturbios en el centro · personas heridas' },
-    caption: 'Esto pasó hoy en el centro de Nexópolis. El mundo tiene que verlo. #DerechosHumanos',
-    likes: '33 mil', verdict: 'warn', verdictLabel: 'SE QUEDA CON ADVERTENCIA',
-    explain: 'Según <b>Violent and Graphic Content</b>, el contenido gráfico que <b>crea conciencia</b> o es noticia puede quedarse, cubierto con una <b>pantalla de advertencia</b> y limitado para menores. Si celebrara o se burlara del sufrimiento, se eliminaría.',
-  },
-  {
-    id: 'te', title: 'El té milagroso', user: 'vida.zen.oficial', avatar: '🍵', policies: ['misinfo'],
+    caption: 'Miren lo que dijo esta 🤡. Aquí está su número: escríbanle y díganle lo que pensamos 👇',
+    verdict: 'remove', explain: 'Publica el teléfono de una persona privada y anima a atacarla.' },
+  { id: 'protesta', title: 'El video de la protesta', user: 'noticias_ya', avatar: '📰', policies: ['graphic'],
+    image: { emoji: '📹⚠️', bg: 'linear-gradient(135deg,#7f1d1d,#ef4444)', caption: 'VIDEO · Disturbios · personas heridas' },
+    caption: 'Esto pasó hoy en el centro de Nexópolis. El mundo tiene que verlo.',
+    verdict: 'disturbing', explain: 'Crea conciencia: puede quedarse, pero con pantalla de advertencia. Si celebrara la violencia, se eliminaría.' },
+  { id: 'te', title: 'El té milagroso', user: 'vida.zen.oficial', avatar: '🍵', policies: ['misinfo'],
     image: { emoji: '🍵✨', bg: 'linear-gradient(135deg,#065f46,#7ddf64)', caption: '¡CURA EN 7 DÍAS!' },
-    caption: 'Este té CURA la diabetes en 7 días 🍵 Deja tu medicamento y tómalo 3 veces al día. Link en la bio 💸',
-    likes: '5.1 mil', verdict: 'remove', verdictLabel: 'SE ELIMINA',
-    explain: '<b>Misinformation</b>: se elimina la desinformación sobre salud que puede causar <b>daño físico</b>, como promover curas milagrosas o animar a dejar un tratamiento médico.',
-  },
-  {
-    id: 'spoiler', title: 'La amenaza del spoiler', user: 'seriefan_99', avatar: '📺', policies: ['violence'],
+    caption: 'Este té CURA la diabetes en 7 días 🍵 Deja tu medicamento y tómalo 3 veces al día.',
+    verdict: 'remove', explain: 'Desinformación de salud que puede causar daño físico: animar a dejar un tratamiento.' },
+  { id: 'spoiler', title: 'La amenaza del final', user: 'seriefan_99', avatar: '📺', policies: ['violence'],
     image: { emoji: '🍿😤', bg: 'linear-gradient(135deg,#1e3a8a,#22d3ee)', caption: 'ESTRENO HOY · FINAL DE TEMPORADA' },
-    caption: 'Si alguien me hace spoiler del final de la serie esta noche, LO MATO 😂😂🔪 #NoSpoilers',
-    likes: '2.3 mil', verdict: 'keep', verdictLabel: 'SE QUEDA',
-    explain: '<b>Violence and Incitement</b> tiene en cuenta el <b>contexto</b>: aquí no hay un objetivo real, ni lugar, ni intención creíble. Es una <b>exageración evidente</b> en tono de broma. Distinto sería una amenaza concreta contra una persona.',
-  },
-  {
-    id: 'arbitro', title: 'El hincha furioso', user: 'barra_brava_nx', avatar: '⚽', policies: ['violence', 'privacy'],
+    caption: 'Si alguien me cuenta el final de la serie esta noche, ¡LO MATO! 😂😂',
+    verdict: 'noviolation', explain: 'Exageración evidente en broma: no hay objetivo real ni intención creíble.' },
+  { id: 'arbitro', title: 'El hincha furioso', user: 'barra_brava_nx', avatar: '⚽', policies: ['violence', 'privacy'],
     image: { emoji: '⚽😡', bg: 'linear-gradient(135deg,#14532d,#ef4444)', caption: 'ÁRBITRO PÉREZ · Calle Sol 18' },
-    caption: 'Árbitro Pérez: ya sabemos dónde vives (Calle Sol 18). El domingo te esperamos a la salida del estadio 👊👊',
-    likes: '417', verdict: 'remove', verdictLabel: 'SE ELIMINA',
-    explain: 'Hay un <b>objetivo concreto</b>, un <b>lugar</b> y una <b>fecha</b>: es una amenaza creíble según <b>Violence and Incitement</b>. Además, publicar su dirección es una <b>Privacy Violation</b>. Comparen con el caso del spoiler: el contexto lo cambia todo.',
-  },
-  {
-    id: 'pastillas', title: 'La farmacia del DM', user: 'todo.sin.receta', avatar: '💊', policies: ['restricted'],
+    caption: 'Árbitro Pérez: sabemos dónde vives (Calle Sol 18). El domingo te esperamos a la salida 👊',
+    verdict: 'remove', explain: 'Objetivo, lugar y fecha concretos: es una amenaza creíble. Y expone su dirección.' },
+  { id: 'pastillas', title: 'La farmacia del chat', user: 'todo.sin.receta', avatar: '💊', policies: ['restricted'],
     image: { emoji: '💊📦', bg: 'linear-gradient(135deg,#4c1d95,#a855f7)', caption: 'ENVÍO DISCRETO · SIN RECETA' },
-    caption: 'Vendo pastillas para dormir y para adelgazar SIN receta 💊 Envío discreto a todo Nexópolis. Escríbeme al DM 📩',
-    likes: '96', verdict: 'remove', verdictLabel: 'SE ELIMINA',
-    explain: '<b>Restricted Goods and Services</b>: no se permite que particulares compren, vendan o intercambien <b>medicamentos</b>, drogas u otros bienes regulados. Hablar de un medicamento o de su uso médico sí está permitido.',
-  },
-  {
-    id: 'noticia', title: 'La noticia del grupo armado', user: 'diario.nexopolis', avatar: '🗞️', policies: ['doi'],
+    caption: 'Vendo pastillas para dormir y para adelgazar SIN receta 💊 Escríbeme por mensaje directo.',
+    verdict: 'remove', explain: 'Venta entre particulares de medicamentos: no está permitida.' },
+  { id: 'noticia', title: 'La noticia del grupo armado', user: 'diario.nexopolis', avatar: '🗞️', policies: ['doi'],
     image: { emoji: '🗞️🕊️', bg: 'linear-gradient(135deg,#334155,#0f172a)', caption: 'INFORME ESPECIAL' },
-    caption: 'El grupo armado "Puño Gris" se atribuyó el ataque de ayer. Hablamos con las víctimas y con expertos. Rechazamos toda forma de violencia.',
-    likes: '8.7 mil', verdict: 'keep', verdictLabel: 'SE QUEDA',
-    explain: '<b>Dangerous Organizations and Individuals</b> permite <b>informar</b> sobre estos grupos, <b>condenarlos</b> o analizarlos. Lo que no se permite es glorificarlos, apoyarlos o hablar en su nombre. Este caso es periodismo con condena explícita.',
-  },
-  {
-    id: 'empleo', title: 'La oferta de trabajo soñada', user: 'empleos.internacionales.ya', avatar: '✈️', policies: ['humanexp', 'commercial'],
+    caption: 'El grupo armado "Puño Gris" se atribuyó el ataque de ayer. Hablamos con las víctimas. Rechazamos toda violencia.',
+    verdict: 'noviolation', explain: 'Informar sobre estos grupos o condenarlos está permitido; glorificarlos, no.' },
+  { id: 'empleo', title: 'La oferta de trabajo soñada', user: 'empleos.internacionales.ya', avatar: '✈️', policies: ['humanexp', 'commercial'],
     image: { emoji: '✈️💼', bg: 'linear-gradient(135deg,#0e7490,#ffd23f)', caption: '¡$5.000 AL MES · SIN EXPERIENCIA!' },
-    caption: '¡Trabajo en el extranjero! Sin experiencia, $5.000 al mes 💸 Te pagamos el pasaje: solo envíanos una foto de tu pasaporte. Viaje la próxima semana. Cupos limitados ⏳',
-    likes: '1.9 mil', verdict: 'remove', verdictLabel: 'SE ELIMINA',
-    explain: 'Las ofertas engañosas que piden documentos y prometen viajes "pagados" son una forma común de captar víctimas. <b>Human Exploitation</b> prohíbe el contenido que facilita la trata o el trabajo forzoso. Si dudas, reporta: puede proteger una vida.',
-  },
+    caption: '¡Trabajo en el extranjero! Te pagamos el pasaje: solo envía foto de tu pasaporte. Cupos limitados ⏳',
+    verdict: 'remove', explain: 'Las ofertas engañosas que piden documentos son una forma común de captar víctimas de trata.' },
 ];
 
-/* ---------------- MISIÓN 4: TELÉFONO VIRAL ---------------- */
+/* ---------------- BONUS TORRE ESPIRAL: TELÉFONO VIRAL ---------------- */
 const PHONE_MESSAGES = [
   'ÚLTIMA HORA: la alcaldesa Brillo confirmó que el martes 14 el puente de la Plaza Azul cerrará de 3 a 5 de la tarde por mantenimiento, pero el tren flotante será gratis para mayores de 60.',
   'Según el laboratorio de la Torre Espiral, los gatos naranjas del Puerto Verde NO transmiten el virus del glitch, pero recomiendan limpiar los visores VR dos veces por semana con agua tibia.',
   'El festival de la Nebulosa se pasa al sábado 22 porque se escaparon 3 dragones de neón; los boletos del viernes siguen sirviendo si los cambian antes del jueves al mediodía.',
 ];
 
-/* ---------------- MISIÓN 5: CONTRASEÑA ---------------- */
+/* ---------------- MISIÓN 5: ESCÁNER DE PRIVACIDAD ---------------- */
 const PRIVACY = {
   name: 'Toño Turbo', user: 'tono.turbo95', avatar: '🧑‍🎤',
   bio: [
@@ -404,6 +336,7 @@ const PRIVACY = {
   ],
   hint: '[nombre de mi mascota] + [año en que nací] + [mi símbolo favorito]',
   answer: 'pelusa1995*',
+  riskLabels: { r1: 'Fecha de nacimiento', r2: 'Nombre de la mascota', r3: 'Viaje anunciado', r4: 'Código del boleto', r5: 'Dirección de casa', r6: 'Placa del carro' },
   risks: {
     r1: 'Fecha de nacimiento completa: sirve para suplantarte o adivinar contraseñas.',
     r2: 'Nombre de la mascota: es una de las contraseñas y preguntas de seguridad más usadas.',
@@ -416,9 +349,9 @@ const PRIVACY = {
 
 /* ---------------- LECCIONES FINALES ---------------- */
 const LESSONS = {
-  plaza:    { value: 'VOZ', text: 'Expresarnos es poderoso: conocer las Normas Comunitarias nos ayuda a hablar con libertad sin dañar a otros.' },
-  puerto:   { value: 'SEGURIDAD', text: 'Pausa, verifica por otro canal y nunca compartas contraseñas ni códigos. Reporta y bloquea los anzuelos.' },
-  isla:     { value: 'DIGNIDAD', text: 'La sátira y la crítica caben; exponer, acosar o poner en riesgo a personas, no.' },
-  torre:    { value: 'AUTENTICIDAD', text: 'Antes de compartir: revisa la fuente, la fecha y el contexto. Si te genera emoción extrema, sospecha.' },
-  nebulosa: { value: 'PRIVACIDAD', text: 'Haz la Revisión de privacidad, usa contraseñas únicas y activa la verificación en dos pasos.' },
+  plaza:    { value: 'VOZ', text: 'Moderar bien es decidir rápido y con criterio: conocer las políticas protege la voz de todos.' },
+  puerto:   { value: 'SEGURIDAD', text: 'Pausa, verifica por otro canal y nunca compartas contraseñas ni códigos.' },
+  isla:     { value: 'DIGNIDAD', text: 'La sátira y la crítica caben; exponer, amenazar o acosar a personas, no.' },
+  torre:    { value: 'AUTENTICIDAD', text: 'Un rumor corre más rápido que la verdad. Verifica antes de compartir.' },
+  nebulosa: { value: 'PRIVACIDAD', text: 'Lo que publicas puede usarse en tu contra: cuida tus datos y usa contraseñas únicas.' },
 };
