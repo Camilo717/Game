@@ -23,8 +23,11 @@ Todas se juegan **a la vez**: cada equipo en su computadora, con un marcador en 
 | Nebulosa Horizon | **Escáner de Privacidad** | Una linterna recorre un perfil a oscuras para encontrar los datos expuestos. Después viene una **carrera para abrir la bóveda** adivinando la contraseña con lo que publicó el cómplice | Juegos de objetos ocultos |
 
 Además:
+- **Capitanes y rotación:** cada equipo registra a su capitán ⭐ y a sus integrantes. En cada minijuego el juego anuncia **¡CAMBIO!** y dice a quién le toca, empezando por el capitán, así todos pasan por los controles bajo presión. También rota quién escribe en El Consejo.
+- **Medición:** el juego registra la **precisión** y el **tiempo por decisión** de cada equipo y de cada integrante.
+- **Reporte de oportunidades:** al final (o desde el menú ☰) la persona moderadora abre un reporte con las políticas con más errores del grupo, de cada equipo y de cada integrante. Se puede copiar, descargar en CSV o imprimir como PDF. Cada equipo ve además "Sus oportunidades" en la pantalla final.
 - **Pistas privadas:** el mejor equipo de cada misión recibe su pista solo en su pantalla, y queda guardada en su *Libreta*.
-- **Mercado de Pistas:** los equipos se envían mensajes. Las pistas compartidas desde la libreta llegan con el sello **VERIFICADA**; los mensajes escritos a mano, con **SIN VERIFICAR** (¡se puede mentir!). También se pueden pagar corazones a otro equipo.
+- **Mercado de Pistas (en silencio):** se negocia por escrito, sin hablar de mesa a mesa, para no generar ruido en piso. Un equipo **ofrece** una pista verificada a cambio de corazones y el otro pulsa Aceptar o Rechazar: el juego hace el intercambio solo. Cada equipo tiene además solo **3 mensajes libres**, que llegan con el sello **SIN VERIFICAR** (ahí se puede mentir). Dura 3 minutos y la moderadora puede saltarlo.
 - **Insignias:** se ganan logros como "Ojo de halcón", "Más listo que la IA" o "Hacker ético".
 - **Archivo de Políticas:** cada misión desbloquea las políticas de su distrito.
 
@@ -46,8 +49,9 @@ Hacen falta dos cosas:
 
 El día del juego:
 1. La persona moderadora abre el enlace y pulsa **Crear sala**. Aparece un **código de 4 letras**, un **código QR** y un enlace.
-2. Cada equipo abre el enlace (o escribe el código), registra su nombre, insignia y color.
-3. La persona moderadora controla todo desde la barra inferior: historia, mapa, misiones, pistas, mercado, acusación y final. El menú ☰ permite ajustar puntos o saltar al Mercado si el tiempo apremia.
+2. Cada equipo abre el enlace (o escribe el código) y registra su nombre, su **capitán**, sus integrantes, insignia y color.
+3. En la sala de espera, la persona moderadora elige el **ritmo** de los minijuegos (Tranquilo, Normal o Rápido) y si habrá **rotación** de integrantes.
+4. La persona moderadora controla todo desde la barra inferior: historia, mapa, misiones, pistas, mercado, acusación y final. El menú ☰ permite ajustar puntos o saltar al Mercado si el tiempo apremia.
 
 > ⚠️ El artefacto de Claude no permite conexiones externas, así que ahí el juego solo funciona en modo prueba. Para jugar en red, usa GitHub Pages u otro hosting.
 
@@ -90,12 +94,24 @@ El día del juego:
 | Momento | Duración |
 |---|---|
 | Registro de equipos + historia en cómic + sospechosos + reglas | 6′ |
-| Feed Frenético (60 s de juego) | 4′ |
-| Caza de Anzuelos (45 s de juego) | 4′ |
+| Feed Frenético (60 s de juego, 3 turnos) | 4′ |
+| Caza de Anzuelos (60 s de juego, 3 turnos; ritmo pausado para leer) | 4′ |
 | El Consejo (2 o 3 casos) | 9′ |
 | Rompe la Cadena (+ bonus opcional: Teléfono en cadena) | 4–8′ |
-| Escáner de Privacidad + bóveda | 6′ |
-| Mercado de Pistas (4 min) + acusación + revelación + podio | 8′ |
+| Escáner de Privacidad (56 s, 2 turnos) + bóveda | 6′ |
+| Mercado de Pistas (3 min) + acusación + revelación + podio | 7′ |
+| Reporte de oportunidades y cierre | 3′ |
+
+Los tiempos corresponden al ritmo **Normal**. Con **Tranquilo**, cada minijuego dura un 35 % más y los contenidos permanecen más tiempo en pantalla.
+
+---
+
+## 🧭 Recomendaciones para la sesión
+
+- **Armar los equipos según resultados:** conviene mezclar perfiles y nombrar **capitanes a las personas con más oportunidad** en sus indicadores de calidad. Como capitanes juegan primero, confirman la acusación y se exponen más al proceso, que es donde más se aprende.
+- **Contenido ficticio:** todo el contenido del juego es inventado. No se usan casos reales ni contenido de las colas de trabajo, así que la dinámica no afecta los requisitos de seguridad del cliente. Al personalizar `js/data.js`, mantengan esa regla.
+- **Ruido en piso:** el Mercado de Pistas está pensado para jugarse en silencio. Si aun así se desordena, se puede saltar directo a la acusación.
+- **Cierre:** usen el Reporte de oportunidades para dar feedback: qué políticas costaron más al grupo y a cada equipo, y cómo le fue a cada integrante en precisión y tiempo.
 
 ---
 

@@ -9,6 +9,8 @@
      api.log(obj)         guarda errores para el repaso
      api.progress()       0 → 1 según el tiempo transcurrido
      api.end()            termina el turno antes de tiempo
+     api.tempo            factor de ritmo (1 = normal, >1 = más tiempo para leer)
+     api.rec({ok, policy, ms})  registra cada decisión para el reporte
    Cada juego devuelve { stop(), onEnd?() }.
    ========================================================= */
 const Games = (() => {
@@ -17,12 +19,16 @@ const Games = (() => {
   const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const pol = id => POLICIES.find(p => p.id === id);
 
+  /* Pausa global: se usa durante el "¡CAMBIO!" de integrante */
+  let paused = false;
+  const pause = v => { paused = !!v; };
   function loop(fn) {
     let alive = true, last = performance.now();
     (function f(now) {
       if (!alive) return;
       const dt = Math.min(.05, (now - last) / 1000); last = now;
-      fn(dt, now); requestAnimationFrame(f);
+      if (!paused) fn(dt, now);
+      requestAnimationFrame(f);
     })(last);
     return () => (alive = false);
   }
@@ -71,11 +77,13 @@ const Games = (() => {
         ${showAi ? `<div class="fai">${icon('robot-antennas')} La IA asistente sugiere: <b>${DECISIONS[aiDec].label}</b> <small>(${Math.round(rnd(71, 97))}% segura)</small></div>` : ''}
         <div class="fbar"><i></i></div>`;
       stack.appendChild(el);
-      cur = { p, el, bar: el.querySelector('.fbar i'), age: 0, life: Math.max(4, 7.5 - combo * .3 - api.progress() * 1.5), showAi, aiDec };
+      cur = { p, el, bar: el.querySelector('.fbar i'), age: 0, life: Math.max(4.5, 9 - combo * .3 - api.progress() * 1.5) * (api.tempo || 1), showAi, aiDec };
     }
     function resolve(dec) {
-      if (!cur) return;
-      const { p, el, showAi, aiDec } = cur; cur = null;
+      if (!cur || (dec && paused)) return;
+      const { p, el, showAi, aiDec } = cur;
+      api.rec({ ok: dec === p.d, policy: p.policy || 'none', ms: Math.round(cur.age * 1000) });
+      cur = null;
       const [x, y] = relPos(A, el);
       const ok = dec === p.d;
       if (dec) {
@@ -151,14 +159,14 @@ const Games = (() => {
     function spawn() {
       const free = slots.filter(s => !s.busy); if (!free.length) return;
       const slot = free[Math.floor(Math.random() * free.length)]; slot.busy = true;
-      const isScam = Math.random() < .58;
+      const isScam = Math.random() < .55;
       const m = isScam ? scams[si++ % scams.length] : legit[li++ % legit.length];
       const el = document.createElement('button');
       el.className = 'bottle ' + (isScam ? 'scam' : 'legit');
       el.style.left = `${4 + slot.c * 24 + rnd(0, 4)}%`; el.style.top = `${10 + slot.r * 25 + rnd(0, 6)}%`;
       el.style.animationDelay = `${rnd(0, 1)}s`;
       el.innerHTML = `<div class="bm"><b>${icon('envelope')} ${m.from}</b><span>${m.text}</span></div>`;
-      const life = lerp(3.8, 2.5, api.progress());
+      const life = lerp(6, 4.2, api.progress()) * (api.tempo || 1);
       const item = { el, slot, m, isScam, t: 0, life, done: false };
       el.onclick = () => hit(item);
       layer.appendChild(el); alive.add(item);
@@ -168,7 +176,8 @@ const Games = (() => {
       item.el.classList.add(cls); setTimeout(() => item.el.remove(), 450);
     }
     function hit(item) {
-      if (item.done) return;
+      if (item.done || paused) return;
+      api.rec({ ok: item.isScam, policy: item.isScam ? item.m.policy : 'legit', ms: Math.round(item.t * 1000) });
       const [x, y] = relPos(A, item.el);
       if (item.isScam) {
         combo++; st.caught++;
@@ -183,16 +192,17 @@ const Games = (() => {
       }
       api.combo(combo);
     }
-    spawn(); spawn(); spawn();
+    spawn(); spawn();
     const stopLoop = loop(dt => {
       spawnT -= dt;
-      if (spawnT <= 0) { spawn(); spawnT = lerp(.7, .38, api.progress()); }
+      if (spawnT <= 0) { spawn(); spawnT = lerp(1.25, .8, api.progress()) * (api.tempo || 1); }
       for (const it of [...alive]) {
         it.t += dt;
         if (it.t >= it.life) {
           if (it.isScam) {
             const [x, y] = relPos(A, it.el);
             combo = 0; api.combo(0); st.escaped++;
+            api.rec({ ok: false, policy: it.m.policy });
             api.add(-15, x, y - 30, '🎣 ¡Se escapó!', '#ff8a3d');
             api.log({ text: `${it.m.from}: ${it.m.text}`, right: 'scam', policy: it.m.policy });
           }
@@ -239,6 +249,7 @@ const Games = (() => {
     paintCells();
 
     const onClick = e => {
+      if (paused) return;
       const r = cv.getBoundingClientRect();
       const x = (e.clientX - r.left) * dpr, y = (e.clientY - r.top) * dpr;
       let best = -1, bd = 40 * dpr;
@@ -286,7 +297,7 @@ const Games = (() => {
       nodes.forEach(n => { if (n.pulse > 0) n.pulse = Math.max(0, n.pulse - dt * 1.5); });
       spreadT -= dt;
       if (spreadT <= 0) {
-        spreadT = lerp(1.15, .55, api.progress());
+        spreadT = lerp(1.25, .65, api.progress()) * (api.tempo || 1);
         nodes.forEach((n, i) => { if (n.s === 1) n.nb.forEach(j => { if (nodes[j].s === 0 && Math.random() < .5 && !pulses.some(p => p.b === j)) pulses.push({ a: i, b: j, t: 0 }); }); });
       }
       pulses = pulses.filter(p => {
@@ -331,7 +342,7 @@ const Games = (() => {
     sc.addEventListener('pointermove', move);
     sc.style.setProperty('--mx', '50%'); sc.style.setProperty('--my', '40%');
     lit.addEventListener('click', e => {
-      const el = e.target.closest('[data-risk]'); if (!el) return;
+      const el = e.target.closest('[data-risk]'); if (!el || paused) return;
       const [x, y] = relPos(A, el);
       const id = el.dataset.risk;
       if (!id) { api.add(-15, x, y, '✘<small>Eso no es riesgoso</small>', '#ff4d6d'); api.sfx.err(); return; }
@@ -347,8 +358,8 @@ const Games = (() => {
         setTimeout(api.end, 900);
       }
     });
-    return { stop() { sc.removeEventListener('pointermove', move); }, stats: () => ({ found: found.size, badges: found.size === total ? ['linterna'] : [] }) };
+    return { stop() { sc.removeEventListener('pointermove', move); }, stats: () => ({ found: found.size, missing: Object.keys(PRIVACY.riskLabels).filter(k => !found.has(k)).map(k => PRIVACY.riskLabels[k]), badges: found.size === total ? ['linterna'] : [] }) };
   }
 
-  return { feed, sea, chain, scanner, burst, floatText };
+  return { feed, sea, chain, scanner, burst, floatText, pause };
 })();
