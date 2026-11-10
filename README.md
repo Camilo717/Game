@@ -6,30 +6,39 @@ Cada equipo juega desde **su propia computadora**, en lugares distintos y sin ne
 > Nexópolis, 23:00. Alguien robó el **Cristal de la Confianza**, que se rompió en 5 fragmentos: **Voz, Seguridad, Dignidad, Autenticidad y Privacidad**.
 > Los equipos (la Liga de Guardianes) juegan misiones para recuperarlos, ganan **pistas secretas** que llegan en privado a su pantalla, negocian en el **Mercado de Pistas**... y acusan a uno de 6 sospechosos.
 
-Estilo visual: **cómic noir de detectives**, con papel envejecido, semitonos, tablero de corcho con polaroids y onomatopeyas. Todo está en español, excepto los **nombres oficiales de las políticas** y las **decisiones de moderación** (**REMOVE**, **NO VIOLATION** y **MARK AS DISTURBING**).
+Estilo visual: **cómic noir de detectives**, con papel envejecido, semitonos, tablero de corcho con polaroids y onomatopeyas. Todo está en español, excepto los **nombres oficiales de las políticas** y las **decisiones de moderación**, que son solo dos: **DELETE** y **NO ACTION**.
 
 ---
 
-## 🎮 Las misiones
+## 🎮 Las misiones: cada partida es distinta
 
-Todas se juegan **a la vez**: cada equipo en su computadora, con un marcador en vivo para la persona moderadora.
+Hay un **banco de 8 minijuegos**. Al crear la sala se **sortean 5** y se reparten entre los distritos; la persona moderadora puede volver a sortear en la sala de espera (🎲 *Sortear otros*). Todos se juegan **a la vez**, cada equipo en su computadora, con un marcador en vivo.
 
-| Distrito | Misión | Cómo se juega | Inspiración |
-|---|---|---|---|
-| Plaza Azul | **Feed Frenético** | Llegan publicaciones reportadas y se sellan con las flechas: ← REMOVE · ↓ MARK AS DISTURBING · → NO VIOLATION. Hay combos, apelaciones de usuarios y una "IA asistente" que sugiere decisiones y **a veces se equivoca** | *Papers, Please*, *Moderator Mayhem* |
-| Puerto Verde | **Caza de Anzuelos** | Mensajes que flotan en un puerto nocturno: hay que tocar **solo las estafas**. Tocar un mensaje real resta puntos | Juegos de reflejos |
-| Isla Gradiente | **El Consejo** | Cada equipo elige la decisión para un caso difícil y escribe un argumento. Luego todos votan, en anónimo, el argumento más convincente. Al final se revela la decisión correcta | *Quiplash* (Jackbox) |
-| Torre Espiral | **Rompe la Cadena** | Un rumor salta de usuario en usuario por una red: hay que verificarlos con energía limitada para frenarlo. **Bonus:** *Teléfono en cadena*, en el que cada equipo reescribe de memoria la noticia que le pasó el anterior | *Gartic Phone*, *Bad News* |
-| Nebulosa Horizon | **Escáner de Privacidad** | Una linterna recorre un perfil a oscuras para encontrar los datos expuestos. Después viene una **carrera para abrir la bóveda** adivinando la contraseña con lo que publicó el cómplice | Juegos de objetos ocultos |
+| Minijuego | Cómo se juega | Inspiración |
+|---|---|---|
+| **Feed Frenético** | Llegan publicaciones reportadas y se sellan con las flechas: ← DELETE · → NO ACTION. Con combos, apelaciones y una "IA asistente" que **a veces se equivoca** | *Papers, Please*, *Moderator Mayhem* |
+| **Cinta Transportadora** | Las publicaciones avanzan por una cinta: hay que sellar DELETE (espacio) cuando una infracción pasa por la zona roja, y dejar pasar las que están bien | Juegos de ritmo |
+| **Archivo Express** | Cada caso se archiva en el cajón de la política que viola (teclas 1–4) o en NO ACTION. Enseña los nombres de las políticas | Juegos de clasificación |
+| **Duelo de Publicaciones** | Dos publicaciones, una sola se va: ← o → para elegir cuál es DELETE | Juegos de comparación |
+| **Caza de Anzuelos** | Mensajes que flotan en un puerto nocturno: hay que tocar **solo las estafas** | Juegos de reflejos |
+| **Rompe la Cadena** | Un rumor salta de usuario en usuario por una red: hay que verificarlos con energía limitada. **Bonus:** *Teléfono en cadena* | *Gartic Phone*, *Bad News* |
+| **Escáner de Privacidad** | Una linterna recorre un perfil a oscuras para encontrar los datos expuestos. Luego, **carrera para abrir la bóveda** con la contraseña que delatan sus publicaciones | Objetos ocultos |
+| **El Consejo** | Cada equipo elige DELETE o NO ACTION en un caso difícil y escribe un argumento; todos votan el mejor. Luego se revela la decisión correcta | *Quiplash* (Jackbox) |
+
+**El contenido también cambia en cada ronda:** las publicaciones salen de un generador con plantillas para **las 18 políticas**, que varía nombres, lugares y datos. Además mezcla casos que **parecen infracción pero no lo son** (sátira, contradiscurso, noticias, lactancia, campañas de prevención). El Consejo ofrece 6 casos sorteados de un banco de 19, y el perfil del Escáner (y su contraseña) cambia en cada sala. Cada error muestra **por qué** era esa decisión.
 
 Además:
 - **Capitanes y rotación:** cada equipo registra a su capitán ⭐ y a sus integrantes. En cada minijuego el juego anuncia **¡CAMBIO!** y dice a quién le toca, empezando por el capitán, así todos pasan por los controles bajo presión. También rota quién escribe en El Consejo.
 - **Medición:** el juego registra la **precisión** y el **tiempo por decisión** de cada equipo y de cada integrante.
 - **Reporte de oportunidades:** al final (o desde el menú ☰) la persona moderadora abre un reporte con las políticas con más errores del grupo, de cada equipo y de cada integrante. Se puede copiar, descargar en CSV o imprimir como PDF. Cada equipo ve además "Sus oportunidades" en la pantalla final.
 - **Pistas privadas:** el mejor equipo de cada misión recibe su pista solo en su pantalla, y queda guardada en su *Libreta*.
-- **Mercado de Pistas (en silencio):** se negocia por escrito, sin hablar de mesa a mesa, para no generar ruido en piso. Un equipo **ofrece** una pista verificada a cambio de corazones y el otro pulsa Aceptar o Rechazar: el juego hace el intercambio solo. Cada equipo tiene además solo **3 mensajes libres**, que llegan con el sello **SIN VERIFICAR** (ahí se puede mentir). Dura 3 minutos y la moderadora puede saltarlo.
-- **Insignias:** se ganan logros como "Ojo de halcón", "Más listo que la IA" o "Hacker ético".
-- **Archivo de Políticas:** cada misión desbloquea las políticas de su distrito.
+- **Mercado de Pistas (en silencio, con pistas falsas):** se negocia por escrito, sin hablar de mesa a mesa. Se venden **sobres con una pista**: quien compra **no sabe si es verdadera**. Al abrir el mercado, cada equipo recibe **2 señuelos**: sobres sellados con pistas **falsas** para vender o despistar. Para descubrir una falsa hay dos caminos:
+  - 🔎 la **lupa**: cada equipo tiene 2 para verificar pistas compradas;
+  - 🧠 la **lógica**: una pista falsa siempre descarta al verdadero culpable, así que si al tachar no queda nadie, alguna es falsa.
+
+  Cada equipo tiene además **3 mensajes libres**. En la revelación final, cada equipo ve cuáles de las pistas que compró eran falsas. Dura 3 minutos y la moderadora puede saltarlo.
+- **Insignias:** se ganan logros como "Ojo de halcón", "Archivista experto", "Más listo que la IA" o "Hacker ético".
+- **Archivo de Políticas:** cada misión desbloquea las políticas de su distrito. En los minijuegos de moderación, el generador da más peso a las políticas del distrito donde se juega.
 
 ---
 
@@ -50,7 +59,7 @@ Hacen falta dos cosas:
 El día del juego:
 1. La persona moderadora abre el enlace y pulsa **Crear sala**. Aparece un **código de 4 letras**, un **código QR** y un enlace.
 2. Cada equipo abre el enlace (o escribe el código) y registra su nombre, su **capitán**, sus integrantes, insignia y color.
-3. En la sala de espera, la persona moderadora elige el **ritmo** de los minijuegos (Tranquilo, Normal o Rápido) y si habrá **rotación** de integrantes.
+3. En la sala de espera, la persona moderadora ve los **5 minijuegos sorteados** (y puede sortear otros), elige el **ritmo** (Tranquilo, Normal o Rápido) y si habrá **rotación** de integrantes.
 4. La persona moderadora controla todo desde la barra inferior: historia, mapa, misiones, pistas, mercado, acusación y final. El menú ☰ permite ajustar puntos o saltar al Mercado si el tiempo apremia.
 
 > ⚠️ El artefacto de Claude no permite conexiones externas, así que ahí el juego solo funciona en modo prueba. Para jugar en red, usa GitHub Pages u otro hosting.
@@ -94,11 +103,9 @@ El día del juego:
 | Momento | Duración |
 |---|---|
 | Registro de equipos + historia en cómic + sospechosos + reglas | 6′ |
-| Feed Frenético (60 s de juego, 3 turnos) | 4′ |
-| Caza de Anzuelos (60 s de juego, 3 turnos; ritmo pausado para leer) | 4′ |
-| El Consejo (2 o 3 casos) | 9′ |
-| Rompe la Cadena (+ bonus opcional: Teléfono en cadena) | 4–8′ |
-| Escáner de Privacidad (56 s, 2 turnos) + bóveda | 6′ |
+| 4 minijuegos arcade (entre 46 y 60 s de juego cada uno, en 2 o 3 turnos) | 4′ cada uno |
+| El Consejo, si sale en el sorteo (2 o 3 casos) | 9′ |
+| Bonus opcionales: Teléfono en cadena · bóveda del Escáner | 3–4′ |
 | Mercado de Pistas (3 min) + acusación + revelación + podio | 7′ |
 | Reporte de oportunidades y cierre | 3′ |
 
@@ -127,24 +134,24 @@ Cada misión desbloquea las de su distrito en el **Archivo de Políticas**:
 | Torre Espiral | Misinformation · Spam |
 | Nebulosa Horizon | Privacy Violations · Adult Sexual Exploitation 🛡️ · Child Sexual Exploitation, Abuse, and Nudity 🛡️ |
 
-🛡️ **Protección especial:** por respeto, estas políticas **no se juegan**. Aparecen en el Archivo con una explicación seria. Es un buen momento para que la persona moderadora haga una pausa y las comente.
+🛡️ **Protección especial:** estas políticas también aparecen en los minijuegos, pero solo como **descripción del caso** (por ejemplo: *"[Caso] Perfil adulto que le pide fotos a una niña de 12 años"*), nunca con contenido explícito. En el Archivo tienen una explicación seria; es un buen momento para que la persona moderadora haga una pausa y las comente.
 
 ---
 
 ## 🛠️ Personalizar
 
-Todo el contenido está en **`js/data.js`**:
-- las 18 políticas (`POLICIES`);
-- las decisiones (`DECISIONS`): si tu equipo usa otros nombres, como DELETE o IGNORE, se cambian aquí;
-- las publicaciones del Feed (`FEED_POSTS`) y los mensajes del mar (`SEA_MSGS`);
-- los casos del Consejo (`COUNCIL_CASES`) y las noticias del teléfono (`PHONE_MESSAGES`);
-- sospechosos, insignias (`BADGES`) y lecciones.
+El contenido está en dos archivos:
+- **`js/content.js`**: el generador. Plantillas de publicaciones por política (`P`), palabras que rellenan los huecos (`W`), mensajes del mar, casos del Consejo, perfiles del Escáner y el **banco de minijuegos** (`GAMES`). Para agregar variedad, basta con sumar frases a las plantillas.
+- **`js/data.js`**: las 18 políticas (`POLICIES`), las decisiones (`DECISIONS`, solo dos), los distritos, sospechosos, pistas, noticias del teléfono, insignias (`BADGES`) y lecciones.
+
+Mantengan la regla: **todo ficticio**, sin contenido real de colas de trabajo.
 
 ```
 index.html          → estructura de la página
 css/styles.css      → estilo cómic noir
 js/config.js        → configuración de Firebase
-js/data.js          → TODO el contenido del juego
+js/data.js          → políticas, decisiones, distritos, sospechosos, insignias
+js/content.js       → generador de contenido y banco de minijuegos
 js/net.js           → sincronización en red (Firebase o modo prueba)
 js/games.js         → minijuegos arcade
 js/art.js           → ilustraciones SVG (sospechosos y cristal)
