@@ -99,6 +99,10 @@ const Content = (() => {
     { p: 'graphic', d: 'delete', av: ['🩸', '📹'], u: ['sin.censura{n2}', 'morbo.total'], why: 'Contenido gráfico extremo compartido para burlarse o celebrar el sufrimiento.', t: [
       '[Video] Imágenes sin censura del accidente de {lugar}, se ven los cuerpos. Miren esto jajaja 😂',
       '[Imagen] Así quedó el ladrón después de que lo agarramos. Se lo merecía 🩸😂'] },
+    { p: 'graphic', d: 'delete', av: ['🚑', '📹', '🐕'], u: ['noticias.nx', 'reportero.libre', 'rescate.animal'], why: 'Imágenes fuertes (heridos, sangre), aunque busquen crear conciencia: en este juego, todo lo gráfico es DELETE.', t: [
+      '[Video] Así quedó la avenida tras el accidente de hoy en {lugar}. Imágenes fuertes, se ven heridos. ¡Manejen con cuidado!',
+      '[Video] Protesta de hoy en {lugar}: hubo varios heridos ensangrentados. El mundo tiene que verlo.',
+      '[Imagen] Así encontramos a este perrito herido y sangrando. Hoy está a salvo gracias a ustedes 🙏'] },
     { p: 'graphic', d: 'noaction', av: ['🚑'], u: ['noticias.nx'], why: 'Noticia sin imágenes extremas y sin celebrar la violencia.', t: [
       'Así quedó la avenida en {lugar} tras el choque de hoy (solo daños materiales). Manejen con cuidado.'] },
     { p: 'suicide', d: 'delete', av: ['🖤'], u: ['reto.extremo', 'thin.goals{n2}'], why: 'Promueve autolesiones o trastornos alimentarios.', t: [
@@ -219,8 +223,8 @@ const Content = (() => {
       caption: 'El alcalde prometió arreglar las calles hace 3 años. Aquí su retrato oficial 🥔👑 #sátira', verdict: 'noaction', explain: 'La sátira y la crítica a figuras públicas se permiten. Sin amenazas ni acoso severo, no hay infracción.' },
     { id: 'captura', title: 'La captura expuesta', user: 'justicia_escolar', avatar: '😈', policies: ['privacy', 'bullying'], image: { emoji: '💬📱', bg: 'linear-gradient(135deg,#334155,#64748b)', caption: 'CHAT PRIVADO · Valen · 📞 300 555 0177' },
       caption: 'Miren lo que dijo esta 🤡. Aquí está su número: escríbanle y díganle lo que pensamos 👇', verdict: 'delete', explain: 'Publica el teléfono de una persona privada y anima a atacarla.' },
-    { id: 'protesta', title: 'El video de la protesta', user: 'noticias_ya', avatar: '📰', policies: ['graphic'], image: { emoji: '📹📰', bg: 'linear-gradient(135deg,#7f1d1d,#ef4444)', caption: 'VIDEO · Protesta en el centro' },
-      caption: 'Esto pasó hoy en el centro de Nexópolis. Hubo heridos. El mundo tiene que verlo.', verdict: 'noaction', explain: 'Documenta un hecho de interés público sin celebrar la violencia: se queda. (En la plataforma real, además, se cubriría con una pantalla de advertencia.)' },
+    { id: 'protesta', title: 'El video de la protesta', user: 'noticias_ya', avatar: '📰', policies: ['graphic'], image: { emoji: '📹⚠️', bg: 'linear-gradient(135deg,#7f1d1d,#ef4444)', caption: 'VIDEO · Disturbios · personas heridas' },
+      caption: 'Esto pasó hoy en el centro de Nexópolis. Se ven personas heridas y sangrando. El mundo tiene que verlo.', verdict: 'delete', explain: 'Muestra imágenes gráficas de personas heridas. Aunque busque crear conciencia, el contenido gráfico se trata como DELETE.' },
     { id: 'linchamiento', title: 'El ladrón golpeado', user: 'justicia.ya', avatar: '😂', policies: ['graphic', 'violence'], image: { emoji: '🩸📹', bg: 'linear-gradient(135deg,#450a0a,#991b1b)', caption: 'VIDEO SIN CENSURA' },
       caption: 'Así dejamos al ladrón del barrio. ¡Que aprenda! Compartan jajaja 😂🩸', verdict: 'delete', explain: 'Celebra la violencia y se burla del sufrimiento de una persona: se elimina.' },
     { id: 'te', title: 'El té milagroso', user: 'vida.zen.oficial', avatar: '🍵', policies: ['misinfo'], image: { emoji: '🍵✨', bg: 'linear-gradient(135deg,#065f46,#7ddf64)', caption: '¡CURA EN 7 DÍAS!' },

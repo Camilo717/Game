@@ -49,7 +49,7 @@ const POLICIES = [
   { id: 'bullying', en: 'Bullying and Harassment', es: 'Bullying y acoso', icon: '🛑', district: 'isla',
     desc: 'Protege a las personas de ataques, humillaciones y acoso. Las personas privadas tienen más protección que las figuras públicas.' },
   { id: 'graphic', en: 'Violent and Graphic Content', es: 'Contenido violento y gráfico', icon: '🩹', district: 'isla',
-    desc: 'Elimina el contenido más gráfico y cubre con una pantalla de advertencia otro contenido sensible, sobre todo cuando busca crear conciencia.' },
+    desc: 'Protege a las personas de imágenes violentas o sangrientas. En este juego, todo contenido gráfico (heridos, sangre, cuerpos) es DELETE, incluso si busca crear conciencia. Lo permitido son noticias sin imágenes fuertes.' },
   { id: 'suicide', en: 'Suicide, Self-Injury, and Eating Disorders', es: 'Suicidio, autolesiones y trastornos alimentarios', icon: '💚', district: 'isla', sensitive: true,
     desc: 'Elimina el contenido que promueve o anima el suicidio, las autolesiones o los trastornos alimentarios, pero permite compartir experiencias y buscar apoyo. Meta puede ofrecer recursos de ayuda a quien lo necesite.' },
   { id: 'nudity', en: 'Adult Nudity and Sexual Activity', es: 'Desnudos y actividad sexual de adultos', icon: '🔞', district: 'isla', sensitive: true,
