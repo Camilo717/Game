@@ -35,7 +35,7 @@ b { font-weight: 800; }
 button { font-family: inherit; }
 #sky, #confetti { position: fixed; inset: 0; pointer-events: none; }
 #sky { z-index: 0; }
-#confetti { z-index: 90; }
+#confetti { z-index: 70; }
 .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.65)); }
 .hidden { display: none !important; }
 .row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
@@ -672,4 +672,76 @@ textarea { min-height: 110px; resize: vertical; font-family: var(--f-type); font
 @media (max-width: 640px) {
   .cork-suspects, .pnl-row, .pnl-row.three, .shield-row, .values5, .rules3 { grid-template-columns: 1fr 1fr; }
   .brand-t { display: none; }
+}
+
+/* =========================================================
+   Ajustes tras el feedback: capitanes, rotación, ritmo,
+   mercado ordenado y reporte de oportunidades
+   ========================================================= */
+.lt-info { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.lt-info small { font-family: var(--f-type); font-size: .72em; opacity: .85; }
+.lobby-team span.on, .lobby-team span.off { margin-left: auto; }
+.settings { margin-top: 6px; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 8px 0; border-top: 2px dashed #0003; font-weight: 700; }
+.seg { display: inline-flex; flex-wrap: wrap; }
+.seg button { font-family: var(--f-cond); font-weight: 800; font-size: 1em; padding: 6px 14px; border: 3px solid var(--ink); background: #fff; color: var(--ink); cursor: pointer; margin-left: -3px; }
+.seg button:first-child { margin-left: 0; }
+.seg button.sel { background: var(--yellow); box-shadow: inset 0 -4px 0 var(--red); }
+
+/* Quién está en los controles */
+.turn-box { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--ink); color: var(--paper); border: 3px solid var(--yellow); box-shadow: 4px 4px 0 var(--yellow); width: fit-content; max-width: 100%; }
+.turn-box .gi { width: 38px; height: 38px; color: var(--yellow); }
+.turn-box small { display: block; font-family: var(--f-type); font-size: .72em; letter-spacing: 1px; color: var(--yellow); }
+.turn-box b { font-family: var(--f-title); font-weight: 400; font-size: 1.5em; letter-spacing: 1px; }
+.turn-box b i { font-style: normal; color: var(--yellow); margin: 0 4px; }
+.panel .turn-box, .pnl .turn-box { margin: 4px auto; }
+.hud-who { font-family: var(--f-cond); font-weight: 700; font-size: 1.15em; padding: 4px 12px; background: var(--ink); border: 2px solid var(--yellow); color: var(--paper); display: flex; align-items: center; gap: 6px; }
+.hud-who b { font-family: var(--f-title); font-weight: 400; font-size: 1.2em; letter-spacing: 1px; color: var(--yellow); }
+.tbar em { position: absolute; top: -4px; bottom: -4px; width: 4px; margin-left: -2px; background: var(--red); border: 1px solid #000; }
+.ov-wait.swap { gap: 4px; }
+.swap-next { font-family: var(--f-title); font-size: clamp(26px, 3.4vw, 54px); letter-spacing: 1px; color: var(--paper); text-shadow: 3px 3px 0 var(--ink); text-align: center; }
+.swap-next b { color: var(--yellow); font-weight: 400; }
+.swap-n { font-family: var(--f-title); font-size: clamp(50px, 7vw, 100px); color: var(--red); -webkit-text-stroke: 2px var(--ink); line-height: 1; }
+
+/* Indicadores */
+.kpis { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 8px 0; }
+.kpis span { display: flex; flex-direction: column; align-items: center; min-width: 110px; padding: 6px 12px; background: var(--ink); color: var(--paper); border: 2px solid var(--ink); }
+.kpis small { font-family: var(--f-type); font-size: .66em; letter-spacing: 1px; color: var(--yellow); }
+.kpis b { font-family: var(--f-title); font-weight: 400; font-size: 1.7em; letter-spacing: 1px; }
+.res-kpi { font-family: var(--f-type); font-size: .78em; }
+.my-round { max-width: 760px; margin: 12px auto; }
+.mini-table, .rep-table { width: 100%; border-collapse: collapse; font-size: .9em; margin-top: 8px; text-align: left; }
+.mini-table th, .mini-table td, .rep-table th, .rep-table td { padding: 5px 8px; border-bottom: 1px solid #0003; }
+.mini-table th, .rep-table th { font-family: var(--f-type); font-size: .78em; text-transform: uppercase; letter-spacing: .5px; background: #0001; }
+.rep-table.sm { font-size: .82em; }
+.rep-table small { opacity: .75; }
+
+/* Reporte */
+.report p { margin: 6px 0; }
+.acc-cell { white-space: nowrap; }
+.acc-bar { display: inline-block; width: 110px; height: 12px; border: 2px solid var(--ink); background: #fff; vertical-align: middle; margin-right: 8px; }
+.acc-bar i { display: block; height: 100%; }
+.rep-teams { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; }
+.rep-team { padding: 12px 14px; background: #fff8; border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--tc); break-inside: avoid; }
+.rep-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.rep-team .kpis { justify-content: flex-start; }
+.rep-team .kpis span { min-width: 84px; padding: 4px 8px; }
+.rep-team .kpis b { font-size: 1.3em; }
+.my-opps { width: 100%; margin-top: 18px; text-align: left; }
+.my-opps .codex { margin-top: 8px; }
+
+/* Mercado ordenado */
+.clue-share.sel { background: var(--yellow); outline: 3px solid var(--ink); }
+.msg.offer { border-style: double; border-width: 6px; }
+.offer-clue { font-family: var(--f-hand); background: #fff7a8; padding: 8px 10px; border: 2px solid var(--ink); }
+.offer-clue b { color: var(--red); }
+.tab-body .row { gap: 10px; }
+
+@media print {
+  html, body { height: auto; overflow: visible; background: #fff !important; }
+  body > *:not(#modal-root) { display: none !important; }
+  #modal-root { position: static; display: block !important; background: #fff; padding: 0; }
+  .modal { width: 100%; max-height: none; overflow: visible; border: 0; box-shadow: none; animation: none; background: #fff; }
+  .x-btn, .report-actions { display: none !important; }
+  .rep-team, .dist-h { box-shadow: none; }
 }

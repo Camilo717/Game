@@ -181,6 +181,17 @@
   const unlocked = () => POLICIES.filter(p => (st().done || []).includes(p.district));
   const myClues = () => Object.entries((D.private || {})[ME] || {}).map(([mid, text]) => ({ mid, text }));
   const badgesOf = id => Object.keys((D.badges || {})[id] || {});
+  /* Ajustes de la partida (los fija el moderador en la sala de espera) */
+  const TEMPOS = { 1.35: 'Tranquilo', 1: 'Normal', 0.8: 'Rápido' };
+  const cfg = () => ({ tempo: 1, rotate: true, ...(st().cfg || {}) });
+  /* Integrantes, capitán y rotación de quien está en los controles */
+  const membersOf = id => { const m = ((D.teams || {})[id] || {}).members; return (Array.isArray(m) ? m : Object.values(m || {})).filter(Boolean); };
+  const capOf = id => ((D.teams || {})[id] || {}).captain || null;
+  const rotOf = id => ((D.teams || {})[id] || {}).rot || 0;
+  const playerAt = (id, k = 0) => { const ms = membersOf(id); return ms.length ? ms[(rotOf(id) + k) % ms.length] : null; };
+  const who = (name, id) => (name ? `${name === capOf(id) ? '⭐ ' : ''}${esc(name)}` : '');
+  const rotating = id => cfg().rotate && membersOf(id).length > 1;
+  const bumpRot = n => { if (ME && membersOf(ME).length) R.set(`teams/${ME}/rot`, rotOf(ME) + n); };
 
   /* ================= Barra superior y dock ================= */
   function renderTop() {
@@ -364,6 +375,11 @@
         <div class="panel join-card">
           <label>Nombre del equipo</label>
           <input id="tname" maxlength="20" placeholder="Los Sabuesos" autocomplete="off">
+          <label>Capitán o capitana ⭐</label>
+          <input id="tcap" maxlength="18" placeholder="Quien lidera al equipo" autocomplete="off">
+          <label>Demás integrantes <small>(separados por comas)</small></label>
+          <input id="tmem" maxlength="140" placeholder="Ana, Luis, Sofi" autocomplete="off">
+          <p class="small" style="margin:0">El juego irá pidiendo que roten en los controles, empezando por el capitán.</p>
           <label>Insignia</label>
           <div class="emoji-pick">${EMOJIS.map(e => `<button class="${e === emoji ? 'sel' : ''}" data-e="${e}">${e}</button>`).join('')}</div>
           <label>Color</label>
@@ -377,13 +393,16 @@
       const name = $('#tname', root).value.trim();
       if (!name) return toast('Escriban un nombre');
       if (teamsList().some(t => t.name.toLowerCase() === name.toLowerCase())) return toast('Ese nombre ya está en uso');
+      const clean = v => v.replace(/[<>]/g, '').trim().slice(0, 18);
+      const captain = clean($('#tcap', root).value);
+      const members = [...new Set([captain, ...$('#tmem', root).value.split(/[,;\n]/).map(clean)].filter(Boolean))].slice(0, 8);
       ME = 't' + Math.random().toString(36).slice(2, 8);
       idStore.set(`nx-team-${CODE}`, ME);
-      await R.set(`teams/${ME}`, { name, emoji, color, joined: Net.now() });
+      await R.set(`teams/${ME}`, { name, emoji, color, joined: Net.now(), captain: captain || null, members, rot: 0 });
       sfx.reveal();
     };
     $('#go', root).onclick = go;
-    $('#tname', root).onkeydown = e => { if (e.key === 'Enter') go(); };
+    ['#tname', '#tcap', '#tmem'].forEach(q => ($(q, root).onkeydown = e => { if (e.key === 'Enter') go(); }));
     $('#tname', root).focus();
   }
 
@@ -407,12 +426,20 @@
             <h1 class="comic-title">Sala de espera</h1>
             ${caption('Esperando a los equipos... Con 2 o más pueden empezar. Recomendado: de 3 a 6 equipos.')}
             <div class="lobby-teams" id="lt"></div>
+            <div class="panel settings" id="settings"></div>
           </div>
         </div>`, { wide: true });
       $('#copy', root).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Enlace copiado'); } catch (e) { toast('Copia el enlace a mano'); } };
       const paint = () => {
         const ts = teamsList();
-        $('#lt', root).innerHTML = ts.length ? ts.map((t, i) => `<div class="lobby-team" style="--tc:${t.color};animation-delay:${i * .05}s"><i>${t.emoji}</i><b>${esc(t.name)}</b><span class="${(D.online || {})[t.id] ? 'on' : 'off'}">${(D.online || {})[t.id] ? 'conectado' : 'desconectado'}</span><button class="mini-x" data-rm="${t.id}" title="Quitar">✕</button></div>`).join('') : '<div class="empty-note">Todavía no se ha unido nadie.</div>';
+        $('#lt', root).innerHTML = ts.length ? ts.map((t, i) => `<div class="lobby-team" style="--tc:${t.color};animation-delay:${i * .05}s"><i>${t.emoji}</i><div class="lt-info"><b>${esc(t.name)}</b><small>${capOf(t.id) ? `⭐ ${esc(capOf(t.id))} · ` : ''}${membersOf(t.id).length || '?'} integrante(s)</small></div><span class="${(D.online || {})[t.id] ? 'on' : 'off'}">${(D.online || {})[t.id] ? 'conectado' : 'desconectado'}</span><button class="mini-x" data-rm="${t.id}" title="Quitar">✕</button></div>`).join('') : '<div class="empty-note">Todavía no se ha unido nadie.</div>';
+        const c = cfg();
+        $('#settings', root).innerHTML = `<h3 class="comic-h">${icon('stopwatch')} Ajustes de la partida</h3>
+          <div class="set-row"><span>Ritmo de los minijuegos</span><div class="seg">${Object.entries(TEMPOS).sort((a, b) => b[0] - a[0]).map(([v, l]) => `<button class="${+v === c.tempo ? 'sel' : ''}" data-tempo="${v}">${l}</button>`).join('')}</div></div>
+          <div class="set-row"><span>Rotación de integrantes en los controles</span><div class="seg"><button class="${c.rotate ? 'sel' : ''}" data-rot="1">Sí</button><button class="${c.rotate ? '' : 'sel'}" data-rot="0">No</button></div></div>
+          <p class="small" style="margin:6px 0 0"><b>Tranquilo</b> da más tiempo para leer y buscar. Con <b>rotación</b>, el juego pide cambiar de persona a mitad de cada misión y mide a cada integrante.</p>`;
+        $$('[data-tempo]', root).forEach(b => (b.onclick = () => pub({ cfg: { ...cfg(), tempo: +b.dataset.tempo } })));
+        $$('[data-rot]', root).forEach(b => (b.onclick = () => pub({ cfg: { ...cfg(), rotate: b.dataset.rot === '1' } })));
         $$('[data-rm]', root).forEach(b => (b.onclick = () => ask(`¿Quitar a ${esc(team(b.dataset.rm).name)}?`, () => { R.remove(`teams/${b.dataset.rm}`); R.remove(`scores/${b.dataset.rm}`); }, 'Quitar')));
         hostCtrl(`<span class="ctrl-label">${ts.length} equipos</span><button class="btn red" id="h-start" ${ts.length < 2 ? 'disabled' : ''}>Empezar la historia ▶</button>`,
           dock => { $('#h-start', dock).onclick = () => pub({ scene: 'story', i: 0 }); });
@@ -426,7 +453,7 @@
           ${caption('Esperen a que el moderador empiece el caso. Mientras tanto... miren quién más llegó.')}
           <div class="lobby-teams" id="lt"></div>
         </div>`);
-      const paint = () => { $('#lt', root).innerHTML = teamsList().map(t => `<div class="lobby-team" style="--tc:${t.color}"><i>${t.emoji}</i><b>${esc(t.name)}</b></div>`).join(''); };
+      const paint = () => { $('#lt', root).innerHTML = teamsList().map(t => `<div class="lobby-team" style="--tc:${t.color}"><i>${t.emoji}</i><div class="lt-info"><b>${esc(t.name)}</b><small>${capOf(t.id) ? `⭐ ${esc(capOf(t.id))}` : ''}</small></div></div>`).join(''); };
       paint(); refresh = paint;
     }
   };
@@ -531,8 +558,9 @@
         const launch = () => { sfx.whoosh(); pub({ scene: 'mission', m: { id: d.id, phase: 'intro', round: Date.now() } }); };
         done.includes(d.id) ? ask(`"${d.mission}" ya está resuelta. ¿Jugarla otra vez? (No da otra pista)`, launch, 'Jugar otra vez') : launch();
       }));
-      hostCtrl(allDone ? `<button class="btn red" id="h-mk">Ir al Mercado de Pistas ▶</button>` : `<span class="ctrl-label">Elijan un distrito en el mapa</span>`, dock => {
-        const b = $('#h-mk', dock); if (b) b.onclick = () => pub({ scene: 'market', endsAt: Net.now() + 240000 });
+      hostCtrl(allDone ? `<button class="btn ghost" id="h-acc">Saltar a la acusación</button><button class="btn red" id="h-mk">Ir al Mercado de Pistas ▶</button>` : `<span class="ctrl-label">Elijan un distrito en el mapa</span>`, dock => {
+        const b = $('#h-mk', dock); if (b) b.onclick = () => pub({ scene: 'market', endsAt: Net.now() + MARKET_SECS * 1000 });
+        const a = $('#h-acc', dock); if (a) a.onclick = () => pub({ scene: 'accuse' });
       });
     }
   };
@@ -558,6 +586,18 @@
     if (phase === 'chainreveal') return chainReveal(d, m);
   };
   function missionIntro(d) {
+    const c = cfg(), isArcade = d.kind !== 'council';
+    const shifts = isArcade && c.rotate ? (d.shifts || 2) : 1;
+    const secs = Math.round((d.seconds || 0) * c.tempo);
+    let turn = '';
+    if (ROLE === 'team' && membersOf(ME).length) {
+      const order = Array.from({ length: rotating(ME) ? shifts : 1 }, (_, k) => who(playerAt(ME, k), ME));
+      turn = isArcade
+        ? `<div class="turn-box">${icon('three-friends')}<div><small>EN LOS CONTROLES${order.length > 1 ? ' (EN ESTE ORDEN)' : ''}</small><b>${order.join(' <i>→</i> ')}</b></div></div>`
+        : `<div class="turn-box">${icon('notebook')}<div><small>ESCRIBE EN EL PRIMER CASO</small><b>${who(playerAt(ME), ME)}</b></div></div>`;
+    }
+    const hostInfo = ROLE === 'host' && isArcade
+      ? `<p class="ready-note">${secs} segundos de juego · ritmo ${TEMPOS[c.tempo] || 'Normal'}${shifts > 1 ? ` · ${shifts} turnos por equipo (cambio de integrante cada ${Math.round(secs / shifts)} s)` : ''}</p>` : '';
     view(`${mhead(d)}
       <div class="intro">
         <div class="pnl intro-art" style="--dc:${d.color}">${icon(d.gi)}${burst(d.value, d.color)}</div>
@@ -565,6 +605,7 @@
           ${caption(d.tagline)}
           <div class="steps">${d.steps.map(([ic, t], i) => `<div class="step" style="animation-delay:${.15 + i * .15}s"><div class="sn">${i + 1}</div>${icon(ic)}<b>${t}</b></div>`).join('')}</div>
           ${controlsHTML(d.controls)}
+          ${turn}${hostInfo}
           ${ROLE === 'team' ? `<p class="ready-note">${d.kind === 'council' ? 'Esperen a que el moderador elija el caso.' : '¡Prepárense! Todos los equipos juegan al mismo tiempo cuando el moderador dé la señal.'}</p>` : ''}
         </div>
       </div>`, { wide: true });
@@ -572,76 +613,124 @@
       $('#h-back', dock).onclick = () => pub({ scene: 'map', m: null });
       $('#h-go', dock).onclick = () => {
         if (d.kind === 'council') return pub({ m: { ...st().m, phase: 'pick' } });
-        pub({ m: { ...st().m, phase: 'play', startAt: Net.now() + 5500, seconds: d.seconds } });
+        pub({ m: { ...st().m, phase: 'play', startAt: Net.now() + 5500, seconds: secs, tempo: c.tempo, swaps: shifts - 1, pause: 4 } });
       };
     });
   }
 
-  /* ---------------- ARCADE SIMULTÁNEO ---------------- */
+  /* ---------------- ARCADE SIMULTÁNEO (con rotación de integrantes) ---------------- */
   const MYLOG = {};
   const roundKey = m => `${m.id}-${m.round}`;
   const gameName = id => ({ plaza: 'feed', puerto: 'sea', torre: 'chain', nebulosa: 'scanner' }[id]);
   const resOf = key => (D.res || {})[key] || {};
+  /* La ronda se divide en turnos iguales, con una pausa de "¡CAMBIO!" entre ellos.
+     Todo se calcula desde startAt (hora del servidor), así todos los equipos van a la par. */
+  const wallEnd = m => m.startAt + (m.seconds + (m.swaps || 0) * (m.pause || 0)) * 1000;
+  function roundClock(m) {
+    const now = Net.now(), sw = m.swaps || 0, P = m.pause || 0, L = m.seconds / (sw + 1);
+    if (now < m.startAt) return { phase: 'pre', pre: (m.startAt - now) / 1000 };
+    const w = (now - m.startAt) / 1000, k = Math.floor(w / (L + P)), r = w - k * (L + P);
+    if (k > sw || (k === sw && r >= L)) return { phase: 'done', shift: sw, playElapsed: m.seconds };
+    if (r < L) return { phase: 'play', shift: k, playElapsed: k * L + r };
+    return { phase: 'swap', shift: k + 1, playElapsed: (k + 1) * L, swapLeft: L + P - r };
+  }
+  /* Indicadores: precisión y tiempo medio por decisión */
+  const accOf = s => { const d = (s || {}).detail; return d && d.n ? Math.round(d.ok / d.n * 100) : null; };
+  const ahtOf = s => { const d = (s || {}).detail; return d && d.nms ? d.ms / d.nms / 1000 : null; };
+  const fmtS = v => `${v.toFixed(1).replace('.', ',')} s`;
+  const kpiHTML = s => {
+    const a = accOf(s), h = ahtOf(s);
+    return a == null ? '' : `<div class="kpis"><span><small>PRECISIÓN</small><b>${a}%</b></span>${h != null ? `<span><small>TIEMPO POR DECISIÓN</small><b>${fmtS(h)}</b></span>` : ''}</div>`;
+  };
+  const memHTML = (s, tid) => {
+    const mem = (((s || {}).detail || {}).mem || []).filter(x => x && x.name && x.n);
+    return mem.length > 1 ? `<table class="mini-table"><tr><th>Integrante</th><th>Decisiones</th><th>Precisión</th><th>Tiempo</th></tr>${mem.map(x => `<tr><td>${who(x.name, tid)}</td><td>${x.n}</td><td>${Math.round(x.ok / x.n * 100)}%</td><td>${x.nms ? fmtS(x.ms / x.nms / 1000) : '—'}</td></tr>`).join('')}</table>` : '';
+  };
+
   function arcadePlay(d, m) {
-    const endAt = m.startAt + m.seconds * 1000;
+    const endAt = wallEnd(m);
     if (ROLE === 'host') return arcadeHostLive(d, m, endAt);
     const mine = resOf(roundKey(m))[ME];
     if (mine || Net.now() > endAt - 2000) return arcadeWaiting(d, m, mine);
-    const t = myTeam();
+    const t = myTeam(), nShifts = (m.swaps || 0) + 1;
+    const names = Array.from({ length: nShifts }, (_, k) => playerAt(ME, k) || '');
     const root = view(`
       <div class="arcade" style="--tc:${t.color};--dc:${d.color}">
         <div class="hud">
           <div class="hud-team">${teamTag(t)}</div>
-          <div class="hud-mission">${icon(d.gi)} ${d.mission}</div>
+          <div class="hud-who" id="hw"></div>
           <div class="hud-combo" id="cb"></div>
           <div class="hud-score"><span id="sc">0</span> ❤</div>
         </div>
-        <div class="tbar"><i id="tb"></i><span id="tl">${m.seconds}</span></div>
+        <div class="tbar"><i id="tb"></i><span id="tl">${m.seconds}</span>${Array.from({ length: m.swaps || 0 }, (_, k) => `<em style="left:${(k + 1) / nShifts * 100}%"></em>`).join('')}</div>
         <div class="arena" id="arena"></div>
         <div class="overlay on" id="ov"></div>
       </div>`, { wide: true });
-    const arena = $('#arena', root), ov = $('#ov', root), scEl = $('#sc', root), cbEl = $('#cb', root), tb = $('#tb', root), tl = $('#tl', root);
-    let score = 0, ctl = null, ended = false, lastSec = null, lastCd = null;
+    const arena = $('#arena', root), ov = $('#ov', root), scEl = $('#sc', root), cbEl = $('#cb', root), tb = $('#tb', root), tl = $('#tl', root), hw = $('#hw', root);
+    let score = 0, ctl = null, ended = false, lastSec = null, ovKey = null, shift = 0, playEl = 0, wasSwap = false;
     const log = [];
+    const det = { n: 0, ok: 0, ms: 0, nms: 0, pol: {}, mem: names.map(name => ({ name, n: 0, ok: 0, ms: 0, nms: 0 })) };
     const api = {
-      arena, sfx, log: e => log.push(e),
+      arena, sfx, log: e => log.push(e), tempo: m.tempo || 1,
       add(n, x, y, txt, color, big) {
         score += n; scEl.textContent = score;
         scEl.parentElement.classList.remove('bump'); void scEl.offsetWidth; scEl.parentElement.classList.add('bump');
         if (txt) Games.floatText(arena, x, y, txt, color, big);
       },
+      rec(e) {
+        const k = e.policy || 'none', s = det.mem[shift] || det.mem[0];
+        det.n++; s.n++;
+        if (e.ok) { det.ok++; s.ok++; }
+        if (e.ms) { det.ms += e.ms; det.nms++; s.ms += e.ms; s.nms++; }
+        det.pol[k] = det.pol[k] || [0, 0]; det.pol[k][e.ok ? 0 : 1]++;
+      },
       combo(n) { cbEl.innerHTML = n >= 2 ? `COMBO x${n}` : ''; cbEl.classList.remove('pop'); void cbEl.offsetWidth; if (n >= 2) cbEl.classList.add('pop'); },
       shake() { root.classList.remove('shake'); void root.offsetWidth; root.classList.add('shake'); },
-      progress: () => Math.min(1, Math.max(0, (Net.now() - m.startAt) / (m.seconds * 1000))),
+      progress: () => Math.min(1, Math.max(0, playEl / m.seconds)),
       end: () => finish(),
     };
+    const setOv = (key, html) => { if (ovKey === key) return false; ovKey = key; ov.innerHTML = html; ov.classList.toggle('on', !!html); return true; };
     const finish = () => {
       if (ended) return; ended = true;
+      Games.pause(false);
       if (ctl && ctl.onEnd) ctl.onEnd();
-      const stats = ctl && ctl.stats ? ctl.stats() : {};
+      const stats = { ...(ctl && ctl.stats ? ctl.stats() : {}), detail: det };
       if (ctl) ctl.stop();
-      ov.innerHTML = burst('¡TIEMPO!', '#ffcf33', 'big'); ov.classList.add('on'); sfx.alarm();
+      setOv('end', burst('¡TIEMPO!', '#ffcf33', 'big')); sfx.alarm();
       MYLOG[roundKey(m)] = log;
       setTimeout(() => {
         R.set(`res/${roundKey(m)}/${ME}`, { score: Math.max(0, score), stats, at: Net.now() });
         (stats.badges || []).forEach(b => R.set(`badges/${ME}/${b}`, true));
+        bumpRot(nShifts);
       }, 1200);
     };
-    timers.push({ stop: () => { if (ctl && !ended) { ended = true; ctl.stop(); } } });
+    timers.push({ stop: () => { Games.pause(false); if (ctl && !ended) { ended = true; ctl.stop(); } } });
     (function tick() {
       if (ended || !document.body.contains(root)) return;
-      const now = Net.now();
-      if (now < m.startAt) {
-        const n = Math.ceil((m.startAt - now) / 1000);
-        if (n !== lastCd) { lastCd = n; ov.innerHTML = `<div class="ov-wait">${n > 3 ? caption('¡Atentos! La misión empieza en...') : ''}<div class="ov-big">${n}</div></div>`; if (n <= 3) sfx.drum(); }
+      const c = roundClock(m);
+      if (c.phase === 'pre') {
+        const n = Math.ceil(c.pre);
+        if (setOv('pre' + n, `<div class="ov-wait">${n > 3 ? caption(names[0] ? `Empieza en los controles: <b>${who(names[0], ME)}</b>` : '¡Atentos! La misión empieza en...') : ''}<div class="ov-big">${n}</div></div>`) && n <= 3) sfx.drum();
       } else {
-        if (!ctl) { ov.classList.remove('on'); ov.innerHTML = ''; ctl = Games[gameName(d.id)](api, d.id === 'nebulosa' ? profileHTML(true) : undefined); sfx.reveal(); }
-        const left = Math.max(0, (endAt - now) / 1000);
+        if (!ctl) { setOv('', ''); ctl = Games[gameName(d.id)](api, d.id === 'nebulosa' ? profileHTML(true) : undefined); sfx.reveal(); }
+        if (c.phase === 'done') return finish();
+        if (c.phase === 'swap') {
+          if (!wasSwap) { wasSwap = true; Games.pause(true); sfx.alarm(); }
+          const n = Math.ceil(c.swapLeft), next = names[c.shift];
+          setOv(`swap${c.shift}-${n}`, `<div class="ov-wait swap">${burst('¡CAMBIO!', '#ffcf33', 'big')}
+            <div class="swap-next">${next ? `Ahora juega: <b>${who(next, ME)}</b>` : 'Que pase <b>otra persona</b> del equipo'}</div><div class="swap-n">${n}</div></div>`);
+        } else {
+          if (wasSwap) { wasSwap = false; Games.pause(false); setOv('', ''); sfx.reveal(); }
+          shift = c.shift;
+        }
+        playEl = c.playElapsed;
+        const left = Math.max(0, m.seconds - playEl);
         tb.style.transform = `scaleX(${left / m.seconds})`;
         tb.classList.toggle('low', left < 6);
         const s = Math.ceil(left); tl.textContent = s;
-        if (s !== lastSec) { lastSec = s; if (s <= 5 && s > 0) sfx.tick(); }
-        if (left <= 0) return finish();
+        if (s !== lastSec) { lastSec = s; if (s <= 5 && s > 0 && c.phase === 'play') sfx.tick(); }
+        const label = names[shift] ? `En los controles: <b>${who(names[shift], ME)}</b>` : (nShifts > 1 ? `Turno <b>${shift + 1}</b> de ${nShifts}` : `${icon(d.gi)} ${d.mission}`);
+        if (hw.dataset.k !== String(shift)) { hw.dataset.k = String(shift); hw.innerHTML = label; }
       }
       requestAnimationFrame(tick);
     })();
@@ -665,7 +754,7 @@
   function arcadeWaiting(d, m, mine) {
     const root = view(`${mhead(d)}<div class="wait-grid">
       <div class="pnl center res-me">
-        ${mine ? `<div class="kicker">Su puntaje</div><div class="res-score">${mine.score} ❤</div>` : '<div class="kicker">Esta ronda ya terminó</div>'}
+        ${mine ? `<div class="kicker">Su puntaje</div><div class="res-score">${mine.score} ❤</div>${kpiHTML(mine.stats)}${memHTML(mine.stats, ME)}` : '<div class="kicker">Esta ronda ya terminó</div>'}
         ${mine && ((mine.stats || {}).badges || []).length ? `<div class="badges-row">${mine.stats.badges.map(b => badgeHTML(b)).join('')}</div>` : ''}
         ${reviewHTML(d, MYLOG[roundKey(m)])}
       </div>
@@ -674,14 +763,15 @@
     refresh = () => { $('#lb', root).innerHTML = liveBoard(m); };
   }
   function arcadeHostLive(d, m, endAt) {
+    const total = (endAt - m.startAt) / 1000;
     const root = view(`${mhead(d)}<div class="host-live">
-      <div class="col center"><div id="ck"></div>${caption('Todos los equipos están jugando en sus computadoras. ¡Miren el marcador en vivo!')}</div>
+      <div class="col center"><div id="ck"></div>${caption(`Todos los equipos están jugando en sus computadoras.${m.swaps ? ` El juego pedirá <b>${m.swaps} cambio(s) de integrante</b> durante la ronda.` : ''}`)}</div>
       <div class="col"><h3 class="comic-h">Marcador en vivo</h3><div id="lb">${liveBoard(m)}</div></div></div>`, { wide: true });
     const ck = $('#ck', root);
     if (Net.now() < m.startAt) {
-      const iv = setInterval(() => { const n = Math.ceil((m.startAt - Net.now()) / 1000); if (n > 0) ck.innerHTML = `<div class="ov-big">${n}</div>`; else { clearInterval(iv); clock(ck, endAt, m.seconds, { size: 160 }); } }, 200);
+      const iv = setInterval(() => { const n = Math.ceil((m.startAt - Net.now()) / 1000); if (n > 0) ck.innerHTML = `<div class="ov-big">${n}</div>`; else { clearInterval(iv); clock(ck, endAt, total, { size: 160 }); } }, 200);
       timers.push({ stop: () => clearInterval(iv) });
-    } else clock(ck, endAt, m.seconds, { size: 160 });
+    } else clock(ck, endAt, total, { size: 160 });
     refresh = () => { $('#lb', root).innerHTML = liveBoard(m); };
     hostCtrl(`<span class="ctrl-label">Jugando…</span><button class="btn red" id="h-res">Ver resultados ▶</button>`, dock => { $('#h-res', dock).onclick = () => goResults(d, m); });
   }
@@ -697,11 +787,14 @@
   const badgeHTML = (b, mini) => BADGES[b] ? `<span class="badge ${mini ? 'mini' : ''}" title="${BADGES[b].desc}">${icon(BADGES[b].icon)}<b>${BADGES[b].name}</b></span>` : '';
   function arcadeResults(d, m) {
     const res = resOf(roundKey(m));
-    const ranked = teamsList().map(t => ({ t, s: res[t.id] ? res[t.id].score : 0, b: res[t.id] ? (res[t.id].stats || {}).badges || [] : [] })).sort((a, b) => b.s - a.s);
+    const ranked = teamsList().map(t => ({ t, r: res[t.id], s: res[t.id] ? res[t.id].score : 0, b: res[t.id] ? (res[t.id].stats || {}).badges || [] : [] })).sort((a, b) => b.s - a.s);
+    const mineRes = ROLE === 'team' ? res[ME] : null;
     view(`${mhead(d)}
-      <div class="podium-row">${ranked.map((x, i) => `<div class="res-card ${i === 0 ? 'first' : ''}" style="--tc:${x.t.color};animation-delay:${i * .12}s">
+      <div class="podium-row">${ranked.map((x, i) => { const a = accOf(x.r && x.r.stats), h = ahtOf(x.r && x.r.stats); return `<div class="res-card ${i === 0 ? 'first' : ''}" style="--tc:${x.t.color};animation-delay:${i * .12}s">
         <div class="pos">#${i + 1}</div><div class="big-badge sm" style="--tc:${x.t.color}">${x.t.emoji}</div><b>${esc(x.t.name)}</b><div class="res-score sm">${x.s} ❤</div>
-        <div class="badges-row">${x.b.map(b => badgeHTML(b, true)).join('')}</div></div>`).join('')}</div>
+        ${a != null ? `<div class="res-kpi">${a}% de precisión${h != null ? ` · ${fmtS(h)}` : ''}</div>` : ''}
+        <div class="badges-row">${x.b.map(b => badgeHTML(b, true)).join('')}</div></div>`; }).join('')}</div>
+      ${mineRes ? `<div class="pnl center my-round">${kpiHTML(mineRes.stats)}${memHTML(mineRes.stats, ME)}</div>` : ''}
       ${ROLE === 'team' ? reviewHTML(d, MYLOG[roundKey(m)]) : ''}
       ${caption(ranked[0] && ranked[0].s > 0 ? `¡${esc(ranked[0].t.name)} gana la misión y la pista secreta!` : 'Ronda terminada.')}`, { wide: true });
     sfx.fanfare(); confetti(120);
@@ -744,6 +837,7 @@
         <div class="paper-profile">${profileHTML(false)}</div>
         <div class="pnl vault ${mineOpen ? 'open' : ''}">
           <div class="row" style="justify-content:space-between"><h2 class="comic-h">${icon('combination-lock')} Bóveda de Toño</h2><div id="ck"></div></div>
+          ${rotating(ME) && !mineOpen ? `<div class="turn-box">${icon('key')}<div><small>EN EL TECLADO (TODOS AYUDAN A BUSCAR)</small><b>${who(playerAt(ME), ME)}</b></div></div>` : ''}
           <div class="vault-door" id="door"><div class="dial">${icon(mineOpen ? 'padlock-open' : 'padlock')}</div></div>
           <div class="hint-box">${icon('key')} Pista de su contraseña:<br><b>${PRIVACY.hint}</b></div>
           ${mineOpen ? `<div class="vault-ok">${burst('¡ABIERTA!', '#2ec4b6')}<p>Toño usó <b>datos que él mismo publicó</b>.</p>${polChips(['privacy'])}</div>`
@@ -894,11 +988,18 @@
       const root = view(`${mhead(d)}<div class="council-team"><div>${postHTML(c)}</div>
         <div class="col"><div class="row" style="justify-content:space-between"><h2 class="comic-h">${c.title}</h2><div id="ck"></div></div>
         ${mine ? `<div class="pnl center"><p>✔ Decisión enviada:</p>${dchip(mine.dec)}<p class="argue">“${esc(mine.text)}”</p><p class="small">Esperando a los demás equipos…</p></div>`
-        : `${caption('1) Elijan la decisión. 2) Escriban un argumento corto y convincente: ¡los demás equipos lo votarán!')}
+        : `${rotating(ME) ? `<div class="turn-box">${icon('notebook')}<div><small>ESCRIBE EN ESTE CASO (EL EQUIPO DICTA)</small><b>${who(playerAt(ME), ME)}</b></div></div>` : ''}
+          ${caption('1) Elijan la decisión. 2) Escriban un argumento corto y convincente: ¡los demás equipos lo votarán!')}
           <div class="stamp-pick">${Object.keys(DECISIONS).map(k => `<button class="stamp-btn" data-k="${k}" style="--dc:${DECISIONS[k].color}">${DECISIONS[k].label}</button>`).join('')}</div>
           <textarea id="tx" maxlength="140" placeholder="Porque..."></textarea><div class="small right" id="cnt">0/140</div>
           <button class="btn red big" id="send" disabled>Enviar al Consejo</button>`}</div></div>`, { wide: true });
-      const submit = () => { if (!ans()[ME] && pick) R.set(`council/${cKey(m)}/ans/${ME}`, { dec: pick, text: ($('#tx', root).value.trim() || '(sin argumento)') }); };
+      let sent = false;
+      const submit = () => {
+        if (sent || ans()[ME] || !pick) return;
+        sent = true;
+        R.set(`council/${cKey(m)}/ans/${ME}`, { dec: pick, text: ($('#tx', root).value.trim() || '(sin argumento)') });
+        if (rotating(ME)) bumpRot(1);
+      };
       clock($('#ck', root), m.endsAt, 80, { size: 90, onEnd: submit });
       if (!mine) {
         const send = $('#send', root), tx = $('#tx', root);
@@ -1018,80 +1119,128 @@
     if (mine) refresh = () => { if (!$('.cc-text', root).textContent.startsWith('Abriendo') ) return; paint(); };
     mine ? (sfx.reveal(), confetti(160)) : sfx.whoosh();
     const all = (st().done || []).length === DISTRICTS.length;
-    hostCtrl(`<span class="ctrl-label">Pista entregada</span><button class="btn red" id="h-n">${all ? 'Ir al Mercado de Pistas ▶' : 'Volver al mapa ▶'}</button>`, dock => {
-      $('#h-n', dock).onclick = () => (all ? pub({ scene: 'market', endsAt: Net.now() + 240000, clue: null }) : pub({ scene: 'map', clue: null }));
+    hostCtrl(`<span class="ctrl-label">Pista entregada</span>${all ? '<button class="btn ghost" id="h-acc">Saltar a la acusación</button>' : ''}<button class="btn red" id="h-n">${all ? 'Ir al Mercado de Pistas ▶' : 'Volver al mapa ▶'}</button>`, dock => {
+      $('#h-n', dock).onclick = () => (all ? pub({ scene: 'market', endsAt: Net.now() + MARKET_SECS * 1000, clue: null }) : pub({ scene: 'map', clue: null }));
+      const a = $('#h-acc', dock); if (a) a.onclick = () => pub({ scene: 'accuse', clue: null });
     });
   };
 
-  /* ---------------- MERCADO DE PISTAS ---------------- */
-  const msgs = () => Object.entries((D.market || {}).msgs || {}).map(([k, v]) => ({ k, ...v })).sort((a, b) => (a.k < b.k ? -1 : 1));
-  function msgHTML(x) {
-    const f = team(x.from), t = team(x.to);
-    return `<div class="msg ${x.kind} ${x.from === ME ? 'out' : ''}">
-      <div class="msg-head">${teamTag(f)} → ${teamTag(t)}</div>
-      ${x.kind === 'clue' ? '<div class="msg-stamp ok">PISTA VERIFICADA</div>' : x.kind === 'pay' ? '<div class="msg-stamp pay">PAGO</div>' : '<div class="msg-stamp no">SIN VERIFICAR</div>'}
-      <p>${x.kind === 'pay' ? `Envió <b>${x.amt} ❤</b>` : x.kind === 'clue' ? x.text : esc(x.text)}</p></div>`;
+  /* ---------------- MERCADO DE PISTAS (ordenado y en silencio) ----------------
+     Se negocia con OFERTAS (pista verificada a cambio de corazones, con Aceptar/Rechazar)
+     y con pocos mensajes libres por equipo, para que no se vuelva un desorden. */
+  const MSG_CAP = 3, MARKET_SECS = 180, PRICES = [0, 50, 100, 150, 200, 300];
+  const OFFER_STATUS = { open: 'PENDIENTE', accepted: 'ACEPTADA', rejected: 'RECHAZADA', nofunds: 'SIN FONDOS', failed: 'NO DISPONIBLE' };
+  const pendingAcc = new Set();
+  const marketItems = () => {
+    const mk = D.market || {};
+    return [
+      ...Object.entries(mk.msgs || {}).map(([k, v]) => ({ k, type: 'msg', ...v })),
+      ...Object.entries(mk.offers || {}).map(([k, v]) => ({ k, type: 'offer', ...v })),
+    ].sort((a, b) => (a.at || 0) - (b.at || 0));
+  };
+  function itemHTML(x) {
+    const head = `<div class="msg-head">${teamTag(team(x.from))} → ${teamTag(team(x.to))}</div>`;
+    if (x.type === 'msg') return `<div class="msg text ${x.from === ME ? 'out' : ''}">${head}<div class="msg-stamp no">SIN VERIFICAR</div><p>${esc(x.text)}</p></div>`;
+    const dName = district(x.mid) ? district(x.mid).name : '';
+    let body = `<p>Oferta: una <b>pista verificada</b>${dName ? ` (${dName})` : ''} por <b>${x.price ? `${x.price} ❤` : 'nada: es un regalo'}</b>.</p>`;
+    if (x.status === 'accepted') {
+      const text = ROLE === 'team' && x.to === ME ? ((D.private || {})[ME] || {})[x.mid] : null;
+      body += text ? `<p class="offer-clue">${text}</p><p class="small">Añadida a su libreta.</p>` : `<p class="small">Pista entregada${x.price ? ` y ${x.price} ❤ transferidos` : ''}.</p>`;
+    } else if (x.status === 'open' && ROLE === 'team' && x.to === ME) {
+      const poor = score(ME) < (x.price || 0), wait = pendingAcc.has(x.k);
+      body += `<div class="row"><button class="btn sm red" data-acc="${x.k}" ${poor || wait ? 'disabled' : ''}>${wait ? 'Procesando…' : 'Aceptar'}</button><button class="btn sm ghost" data-rej="${x.k}" ${wait ? 'disabled' : ''}>Rechazar</button>${poor ? '<span class="small warn">No les alcanzan los corazones</span>' : ''}</div>`;
+    }
+    return `<div class="msg offer ${x.from === ME ? 'out' : ''}">${head}<div class="msg-stamp ${x.status === 'accepted' ? 'ok' : x.status === 'open' ? 'pay' : 'no'}">${OFFER_STATUS[x.status] || ''}</div>${body}</div>`;
   }
+  const QUIET = '<b>Mercado en silencio:</b> aquí se negocia <b>por escrito</b>, sin hablar de mesa a mesa. Ofertas ilimitadas y solo <b>' + MSG_CAP + ' mensajes libres</b> por equipo: ¡úsenlos bien!';
   SC.market = () => {
-    const endsAt = st().endsAt || Net.now() + 240000;
+    const endsAt = st().endsAt || Net.now() + MARKET_SECS * 1000;
     if (ROLE === 'host') {
       const root = view(`<h1 class="comic-title center">${icon('shaking-hands')} Mercado de Pistas</h1>
-        <div class="host-live"><div class="col center"><div id="ck"></div>${caption('Los equipos negocian por mensajes. Las pistas compartidas desde la libreta llevan el sello <b>VERIFICADA</b>; los mensajes escritos a mano, <b>SIN VERIFICAR</b>. ¡Pueden mentir!')}</div>
+        <div class="host-live"><div class="col center"><div id="ck"></div>${caption(`${icon('silence')} ${QUIET}`)}
+          ${caption('Una <b>oferta</b> entrega una pista real (sello VERIFICADA) a cambio de corazones, y el juego hace el intercambio solo. Un <b>mensaje libre</b> llega SIN VERIFICAR: ahí pueden mentir.')}</div>
         <div class="col"><h3 class="comic-h">Lo que circula (vista del moderador)</h3><div class="msg-feed" id="mf"></div></div></div>`, { wide: true });
-      const paint = () => { const all = msgs(); $('#mf', root).innerHTML = all.length ? all.slice(-30).reverse().map(msgHTML).join('') : '<p class="muted">Aún no hay mensajes.</p>'; };
+      const paint = () => { const all = marketItems(); $('#mf', root).innerHTML = all.length ? all.slice(-40).reverse().map(itemHTML).join('') : '<p class="muted">Aún no hay movimientos.</p>'; };
       paint(); refresh = paint;
-      clock($('#ck', root), endsAt, 240, { size: 160 });
+      clock($('#ck', root), endsAt, MARKET_SECS, { size: 160 });
       hostCtrl(`<span class="ctrl-label">Mercado</span><button class="btn red" id="h-n">¡Hora de acusar! ▶</button>`, dock => { $('#h-n', dock).onclick = () => pub({ scene: 'accuse' }); });
       return;
     }
     const others = teamsList().filter(t => t.id !== ME);
     const root = view(`<h1 class="comic-title center">${icon('shaking-hands')} Mercado de Pistas</h1>
+      ${caption(`${icon('silence')} ${QUIET}`)}
       <div class="market">
-        <div class="col">${boardHTML()}</div>
+        <div class="col" id="bd">${boardHTML()}</div>
         <div class="col">
-          <div class="pnl send-box"><div class="row" style="justify-content:space-between"><h3 class="comic-h">Enviar a otro equipo</h3><div id="ck"></div></div>
+          <div class="pnl send-box"><div class="row" style="justify-content:space-between"><h3 class="comic-h">Negociar con otro equipo</h3><div id="ck"></div></div>
             <div class="to-pick">${others.map((t, i) => `<button class="to ${i === 0 ? 'sel' : ''}" data-t="${t.id}" style="--tc:${t.color}">${t.emoji} ${esc(t.name)}</button>`).join('')}</div>
-            <div class="tabs"><button class="tab sel" data-tab="clue">${icon('love-letter')} Pista verificada</button><button class="tab" data-tab="text">${icon('chat-bubble')} Mensaje libre</button><button class="tab" data-tab="pay">${icon('gems')} Pagar ❤</button></div>
+            <div class="tabs"><button class="tab sel" data-tab="offer">${icon('love-letter')} Ofrecer una pista</button><button class="tab" data-tab="text">${icon('chat-bubble')} Mensaje libre (<span id="left">${MSG_CAP}</span>)</button></div>
             <div class="tab-body" id="tb"></div>
           </div>
           <h3 class="comic-h">Bandeja</h3><div class="msg-feed" id="mf"></div>
         </div>
       </div>`, { wide: true });
     bindBoard(root);
-    clock($('#ck', root), endsAt, 240, { size: 70 });
-    let to = others[0] && others[0].id, tab = 'clue';
-    const send = (kind, payload) => { if (!to) return toast('No hay otros equipos'); R.push('market/msgs', { from: ME, to, kind, ...payload, at: Net.now() }); sfx.pop(); toast('Enviado'); };
+    clock($('#ck', root), endsAt, MARKET_SECS, { size: 70 });
+    let to = others[0] && others[0].id, tab = 'offer', sel = 0, price = 100;
+    const msgsLeft = () => MSG_CAP - marketItems().filter(x => x.type === 'msg' && x.from === ME).length;
     const paintTab = () => {
       const tb = $('#tb', root);
-      if (tab === 'clue') {
-        const cl = myClues();
-        tb.innerHTML = cl.length ? `<p class="small">Compartir una pista real de su libreta. Llegará con el sello <b>VERIFICADA</b>.</p>${cl.map((c, i) => `<button class="clue-share" data-i="${i}">${c.text}</button>`).join('')}` : '<p class="small">No tienen pistas propias. Pueden pedirlas con un mensaje libre... o pagar por ellas.</p>';
-        $$('.clue-share', tb).forEach(b => (b.onclick = () => send('clue', { text: cl[+b.dataset.i].text })));
-      } else if (tab === 'text') {
-        tb.innerHTML = '<p class="small">Mensaje libre: llegará con el sello <b>SIN VERIFICAR</b>. Pueden negociar... o mentir.</p><textarea id="mt" maxlength="200" placeholder="Les cambiamos una pista por 100 corazones..."></textarea><button class="btn red" id="ms">Enviar mensaje</button>';
-        $('#ms', tb).onclick = () => { const v = $('#mt', tb).value.trim(); if (!v) return; send('text', { text: v }); $('#mt', tb).value = ''; };
-      } else {
-        tb.innerHTML = `<p class="small">Tienen <b>${score(ME)} ❤</b>. El pago se descuenta de su puntaje.</p><div class="row"><input type="number" class="num-in" id="amt" min="10" step="10" value="50"><button class="btn red" id="pay">Pagar</button></div>`;
-        $('#pay', tb).onclick = () => {
-          const a = Math.floor(Math.abs(+$('#amt', tb).value || 0));
-          if (!a || a > score(ME)) return toast('Cantidad no válida');
+      if (tab === 'offer') {
+        const cl = myClues(); sel = Math.min(sel, Math.max(0, cl.length - 1));
+        tb.innerHTML = cl.length ? `<p class="small">Elijan una pista de su libreta y un precio. Si el otro equipo acepta, el juego entrega la pista y cobra los corazones.</p>
+          ${cl.map((c, i) => `<button class="clue-share ${i === sel ? 'sel' : ''}" data-i="${i}">${c.text}</button>`).join('')}
+          <div class="row"><span>Precio:</span><div class="seg">${PRICES.map(p => `<button class="${p === price ? 'sel' : ''}" data-p="${p}">${p || 'Gratis'}</button>`).join('')}</div></div>
+          <button class="btn red" id="of">Enviar oferta</button>`
+          : '<p class="small">Todavía no tienen pistas para ofrecer. Esperen ofertas de otros equipos o pidan una con un mensaje libre.</p>';
+        $$('.clue-share', tb).forEach(b => (b.onclick = () => { sel = +b.dataset.i; paintTab(); }));
+        $$('[data-p]', tb).forEach(b => (b.onclick = () => { price = +b.dataset.p; paintTab(); }));
+        const of = $('#of', tb);
+        if (of) of.onclick = () => {
           if (!to) return toast('No hay otros equipos');
-          R.push('in', { k: 'pay', from: ME, to, amt: a });
-          R.push('market/msgs', { from: ME, to, kind: 'pay', amt: a, at: Net.now() });
-          sfx.good(); toast('Pago enviado');
+          const c = cl[sel];
+          if (marketItems().some(x => x.type === 'offer' && x.from === ME && x.to === to && x.mid === c.mid && x.status === 'open')) return toast('Ya le hicieron esa oferta a ese equipo');
+          R.push('market/offers', { from: ME, to, mid: c.mid, price, status: 'open', at: Net.now() });
+          sfx.pop(); toast('Oferta enviada');
+        };
+      } else {
+        const left = msgsLeft();
+        tb.innerHTML = left > 0 ? `<p class="small">Llegará con el sello <b>SIN VERIFICAR</b>: pueden pedir, proponer... o mentir. Les quedan <b>${left}</b>.</p>
+          <textarea id="mt" maxlength="160" placeholder="¿Nos venden la pista de la Plaza Azul por 100?"></textarea><button class="btn red" id="ms">Enviar mensaje</button>`
+          : '<p class="small warn">Ya usaron sus mensajes libres. Sigan negociando con ofertas.</p>';
+        const ms = $('#ms', tb);
+        if (ms) ms.onclick = () => {
+          const v = $('#mt', tb).value.trim(); if (!v) return;
+          if (!to) return toast('No hay otros equipos');
+          if (msgsLeft() <= 0) return paintTab();
+          R.push('market/msgs', { from: ME, to, text: v.slice(0, 160), at: Net.now() });
+          sfx.pop(); toast('Mensaje enviado'); setTimeout(paintTab, 300);
         };
       }
     };
     $$('.to', root).forEach(b => (b.onclick = () => { to = b.dataset.t; $$('.to', root).forEach(x => x.classList.toggle('sel', x === b)); }));
     $$('.tab', root).forEach(b => (b.onclick = () => { tab = b.dataset.tab; $$('.tab', root).forEach(x => x.classList.toggle('sel', x === b)); paintTab(); }));
     paintTab();
-    let seen = -1;
+    let seen = -1, nClues = myClues().length, sig = '';
     const paint = () => {
-      const mine = msgs().filter(x => x.to === ME || x.from === ME);
+      const mine = marketItems().filter(x => x.to === ME || x.from === ME);
+      mine.forEach(x => { if (x.type === 'offer' && x.status !== 'open') pendingAcc.delete(x.k); });
       const inbound = mine.filter(x => x.to === ME).length;
       if (seen >= 0 && inbound > seen) sfx.pop();
       seen = inbound;
-      $('#mf', root).innerHTML = mine.length ? mine.slice().reverse().map(msgHTML).join('') : '<p class="muted">Aún no hay mensajes.</p>';
+      $('#left', root).textContent = Math.max(0, msgsLeft());
+      const s2 = JSON.stringify(mine.map(x => [x.k, x.status])) + [...pendingAcc].join() + score(ME);
+      if (s2 !== sig) {
+        sig = s2;
+        $('#mf', root).innerHTML = mine.length ? mine.slice().reverse().map(itemHTML).join('') : '<p class="muted">Aún no hay movimientos.</p>';
+        $$('[data-acc]', root).forEach(b => (b.onclick = () => { pendingAcc.add(b.dataset.acc); R.push('in', { k: 'accept', offer: b.dataset.acc, by: ME }); sfx.stamp(); paint(); }));
+        $$('[data-rej]', root).forEach(b => (b.onclick = () => { R.set(`market/offers/${b.dataset.rej}/status`, 'rejected'); sfx.click(); }));
+      }
+      if (myClues().length !== nClues) {
+        nClues = myClues().length; sfx.reveal();
+        $('#bd', root).innerHTML = boardHTML(); bindBoard($('#bd', root));
+        if (tab === 'offer') paintTab();
+      }
     };
     paint(); refresh = paint;
   };
@@ -1113,7 +1262,7 @@
     }
     const mine = (D.accus || {})[ME];
     const root = view(`<h1 class="comic-title center">${icon('handcuffs')} ¿Quién robó el Cristal?</h1>
-      ${caption(mine ? `Acusaron a <b>${suspect(mine).name}</b>. Pueden cambiar de opinión hasta que el moderador revele.` : 'Toquen la foto del culpable. Su elección es secreta.')}
+      ${caption(mine ? `Acusaron a <b>${suspect(mine).name}</b>. Pueden cambiar de opinión hasta que el moderador revele.` : `Toquen la foto del culpable. Su elección es secreta.${capOf(ME) ? ` Decide el equipo y confirma <b>⭐ ${esc(capOf(ME))}</b>.` : ''}`)}
       <div class="accuse-row">${SUSPECTS.map((s, i) => `<button class="acc ${mine === s.id ? 'sel' : ''}" data-s="${s.id}">${polaroid(s, { cross: true, i })}</button>`).join('')}</div>`, { wide: true });
     $$('.acc', root).forEach(b => (b.onclick = () => { R.set(`accus/${ME}`, b.dataset.s); sfx.stamp(); }));
     refresh = () => { if ((D.accus || {})[ME] !== mine) { lastKey = null; sync(); } };
@@ -1149,21 +1298,142 @@
     hostCtrl(`<span class="ctrl-label">Revelación</span><button class="btn red" id="h-n">Ranking final ▶</button>`, dock => { $('#h-n', dock).onclick = () => pub({ scene: 'final' }); });
   };
 
+  /* ---------------- REPORTE DE OPORTUNIDADES ----------------
+     Reúne lo que midió la dinámica: precisión por política, tiempo por decisión,
+     decisiones del Consejo y desempeño por integrante (si hubo rotación). */
+  const polLabel = k => (k === 'none' ? 'Contenido permitido (NO VIOLATION)' : k === 'legit' ? 'Mensajes reales (falsos positivos)' : policy(k) ? policy(k).en : k);
+  const pct = (ok, n) => (n ? Math.round(ok / n * 100) : null);
+  const oppsOf = (pol, min = 2) => Object.entries(pol || {}).map(([k, v]) => ({ k, ok: v[0] || 0, bad: v[1] || 0, n: (v[0] || 0) + (v[1] || 0) }))
+    .filter(x => x.n >= min && x.bad > 0).map(x => ({ ...x, acc: pct(x.ok, x.n) })).sort((a, b) => a.acc - b.acc || b.bad - a.bad);
+  function teamReport(t) {
+    const r = { t, pol: {}, n: 0, ok: 0, ms: 0, nms: 0, mem: {}, chain: null, scan: null, missing: [], council: [] };
+    Object.entries(D.res || {}).forEach(([key, byTeam]) => {
+      const res = (byTeam || {})[t.id]; if (!res) return;
+      const mid = key.split('-')[0], s = res.stats || {}, d = s.detail || {};
+      Object.entries(d.pol || {}).forEach(([p, v]) => { r.pol[p] = r.pol[p] || [0, 0]; r.pol[p][0] += v[0] || 0; r.pol[p][1] += v[1] || 0; });
+      r.n += d.n || 0; r.ok += d.ok || 0;
+      if (mid === 'plaza') { r.ms += d.ms || 0; r.nms += d.nms || 0; }
+      (Array.isArray(d.mem) ? d.mem : Object.values(d.mem || {})).forEach(m => {
+        if (!m || !m.name || !m.n) return;
+        const a = r.mem[m.name] = r.mem[m.name] || { n: 0, ok: 0, ms: 0, nms: 0 };
+        a.n += m.n; a.ok += m.ok || 0;
+        if (mid === 'plaza') { a.ms += m.ms || 0; a.nms += m.nms || 0; }
+      });
+      if (mid === 'torre' && s.health != null) r.chain = s.health;
+      if (mid === 'nebulosa' && s.found != null) { r.scan = s.found; r.missing = Array.isArray(s.missing) ? s.missing : Object.values(s.missing || {}); }
+    });
+    Object.entries(D.council || {}).forEach(([key, c]) => {
+      const cs = COUNCIL_CASES.find(x => x.id === key.slice(key.lastIndexOf('-') + 1)), a = ((c || {}).ans || {})[t.id];
+      if (cs && a) r.council.push({ title: cs.title, ok: a.dec === cs.verdict, dec: a.dec, right: cs.verdict, policies: cs.policies });
+    });
+    r.acc = pct(r.ok, r.n); r.aht = r.nms ? r.ms / r.nms / 1000 : null;
+    r.opps = oppsOf(r.pol); if (!r.opps.length) r.opps = oppsOf(r.pol, 1);
+    return r;
+  }
+  function reportData() {
+    const teams = teamsList().map(teamReport), pol = {};
+    teams.forEach(r => Object.entries(r.pol).forEach(([p, v]) => { pol[p] = pol[p] || [0, 0]; pol[p][0] += v[0]; pol[p][1] += v[1]; }));
+    const council = {};
+    teams.forEach(r => r.council.forEach(c => { const a = council[c.title] = council[c.title] || { ok: 0, n: 0, right: c.right, policies: c.policies }; a.n++; if (c.ok) a.ok++; }));
+    return { teams, pol, opps: oppsOf(pol), council };
+  }
+  const accBar = a => `<span class="acc-bar"><i style="width:${a}%;background:${a >= 80 ? '#2ec4b6' : a >= 60 ? '#ffcf33' : '#d7263d'}"></i></span><b>${a}%</b>`;
+  function reportHTML(data) {
+    const allPol = Object.entries(data.pol).map(([k, v]) => ({ k, ok: v[0], bad: v[1], n: v[0] + v[1], acc: pct(v[0], v[0] + v[1]) })).sort((a, b) => a.acc - b.acc);
+    const cases = Object.entries(data.council);
+    return `<div class="report">
+      <div class="kicker">Sala ${CODE} · ${new Date().toLocaleDateString('es')}</div>
+      <h2 class="comic-h">${icon('files')} Reporte de oportunidades</h2>
+      <p>Resumen de lo que midió la dinámica. Las políticas con <b>menor precisión</b> son las oportunidades a reforzar en el feedback. Todo el contenido del juego es ficticio.</p>
+      <h3 class="dist-h" style="--dc:#ffcf33">Oportunidades del grupo, por política</h3>
+      ${allPol.length ? `<table class="rep-table"><tr><th>Política</th><th>Decisiones</th><th>Errores</th><th>Precisión</th></tr>
+        ${allPol.map(x => `<tr><td>${polLabel(x.k)}</td><td>${x.n}</td><td>${x.bad}</td><td class="acc-cell">${accBar(x.acc)}</td></tr>`).join('')}</table>` : '<p class="muted">Aún no hay decisiones registradas.</p>'}
+      ${cases.length ? `<h3 class="dist-h" style="--dc:#ff5d8f">Casos del Consejo</h3><table class="rep-table"><tr><th>Caso</th><th>Decisión correcta</th><th>Equipos que acertaron</th></tr>
+        ${cases.map(([title, c]) => `<tr><td>${title}<br><small>${c.policies.map(id => policy(id).en).join(' · ')}</small></td><td>${DECISIONS[c.right].label}</td><td>${c.ok} de ${c.n}</td></tr>`).join('')}</table>` : ''}
+      <h3 class="dist-h" style="--dc:#3a86ff">Por equipo</h3>
+      <div class="rep-teams">${data.teams.map(r => { const mem = Object.entries(r.mem); const cOk = r.council.filter(c => c.ok).length; return `<div class="rep-team" style="--tc:${r.t.color}">
+        <div class="rep-head">${teamTag(r.t)}${capOf(r.t.id) ? `<span class="small">⭐ Capitán: <b>${esc(capOf(r.t.id))}</b></span>` : ''}<span class="small">${score(r.t.id)} ❤</span></div>
+        <div class="kpis">
+          <span><small>PRECISIÓN</small><b>${r.acc != null ? r.acc + '%' : '—'}</b></span>
+          <span><small>TIEMPO POR DECISIÓN</small><b>${r.aht != null ? fmtS(r.aht) : '—'}</b></span>
+          <span><small>CONSEJO</small><b>${r.council.length ? `${cOk}/${r.council.length}` : '—'}</b></span>
+          <span><small>RED SANA</small><b>${r.chain != null ? r.chain + '%' : '—'}</b></span>
+          <span><small>ESCÁNER</small><b>${r.scan != null ? `${r.scan}/${Object.keys(PRIVACY.riskLabels).length}` : '—'}</b></span>
+        </div>
+        ${r.opps.length ? `<p><b>A reforzar:</b> ${r.opps.slice(0, 3).map(o => `${polLabel(o.k)} (${o.acc}%, ${o.bad} error${o.bad === 1 ? '' : 'es'})`).join(' · ')}</p>` : `<p><b>A reforzar:</b> ${r.n ? 'sin errores en las políticas medidas.' : 'sin datos todavía.'}</p>`}
+        ${r.council.filter(c => !c.ok).length ? `<p><b>Consejo:</b> ${r.council.filter(c => !c.ok).map(c => `«${c.title}»: eligieron ${DECISIONS[c.dec] ? DECISIONS[c.dec].label : c.dec}, era ${DECISIONS[c.right].label}`).join(' · ')}</p>` : ''}
+        ${r.missing.length ? `<p><b>Privacidad, no detectaron:</b> ${r.missing.join(', ')}</p>` : ''}
+        ${mem.length ? `<table class="rep-table sm"><tr><th>Integrante</th><th>Decisiones</th><th>Precisión</th><th>Tiempo por decisión</th></tr>
+          ${mem.map(([name, a]) => `<tr><td>${who(name, r.t.id)}</td><td>${a.n}</td><td class="acc-cell">${accBar(pct(a.ok, a.n))}</td><td>${a.nms ? fmtS(a.ms / a.nms / 1000) : '—'}</td></tr>`).join('')}</table>` : ''}
+      </div>`; }).join('')}</div>
+      <p class="small muted">Precisión = decisiones correctas / decisiones tomadas en Feed Frenético y Caza de Anzuelos. El tiempo por decisión se mide en Feed Frenético.</p>
+    </div>`;
+  }
+  function reportText(data) {
+    const L = [`REPORTE DE OPORTUNIDADES · Sala ${CODE} · ${new Date().toLocaleDateString('es')}`, '', 'OPORTUNIDADES DEL GRUPO (menor precisión primero)'];
+    Object.entries(data.pol).map(([k, v]) => ({ k, n: v[0] + v[1], bad: v[1], acc: pct(v[0], v[0] + v[1]) })).sort((a, b) => a.acc - b.acc)
+      .forEach(x => L.push(`- ${polLabel(x.k)}: ${x.acc}% de precisión (${x.bad} errores en ${x.n} decisiones)`));
+    Object.entries(data.council).forEach(([title, c], i) => { if (!i) L.push('', 'CASOS DEL CONSEJO'); L.push(`- ${title}: correcta ${DECISIONS[c.right].label}; acertaron ${c.ok} de ${c.n} equipos`); });
+    data.teams.forEach(r => {
+      L.push('', `EQUIPO ${r.t.name}${capOf(r.t.id) ? ` (capitán: ${capOf(r.t.id)})` : ''} · ${score(r.t.id)} corazones`);
+      L.push(`- Precisión: ${r.acc != null ? r.acc + '%' : 's/d'} · Tiempo por decisión: ${r.aht != null ? fmtS(r.aht) : 's/d'} · Consejo: ${r.council.length ? `${r.council.filter(c => c.ok).length}/${r.council.length}` : 's/d'}`);
+      if (r.opps.length) L.push(`- A reforzar: ${r.opps.slice(0, 3).map(o => `${polLabel(o.k)} (${o.acc}%)`).join(', ')}`);
+      if (r.missing.length) L.push(`- Privacidad, no detectaron: ${r.missing.join(', ')}`);
+      Object.entries(r.mem).forEach(([name, a]) => L.push(`  · ${name}: ${a.n} decisiones, ${pct(a.ok, a.n)}% de precisión${a.nms ? `, ${fmtS(a.ms / a.nms / 1000)} por decisión` : ''}`));
+    });
+    return L.join('\n');
+  }
+  function reportCSV(data) {
+    const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [['seccion', 'equipo', 'nombre', 'decisiones', 'aciertos', 'precision_pct', 'tiempo_por_decision_s']];
+    Object.entries(data.pol).forEach(([k, v]) => rows.push(['grupo_politica', '', polLabel(k), v[0] + v[1], v[0], pct(v[0], v[0] + v[1]), '']));
+    data.teams.forEach(r => {
+      rows.push(['equipo', r.t.name, '', r.n, r.ok, r.acc ?? '', r.aht != null ? r.aht.toFixed(2) : '']);
+      Object.entries(r.pol).forEach(([k, v]) => rows.push(['equipo_politica', r.t.name, polLabel(k), v[0] + v[1], v[0], pct(v[0], v[0] + v[1]), '']));
+      Object.entries(r.mem).forEach(([name, a]) => rows.push(['integrante', r.t.name, name, a.n, a.ok, pct(a.ok, a.n), a.nms ? (a.ms / a.nms / 1000).toFixed(2) : '']));
+      r.council.forEach(c => rows.push(['consejo', r.t.name, c.title, 1, c.ok ? 1 : 0, c.ok ? 100 : 0, '']));
+    });
+    return '﻿' + rows.map(r => r.map(q).join(',')).join('\n');
+  }
+  function openReport() {
+    const data = reportData();
+    const m = modal(`${reportHTML(data)}<div class="row center mt report-actions">
+      <button class="btn" id="rc">Copiar como texto</button><button class="btn ghost" id="rd">Descargar CSV</button><button class="btn ghost" id="rp">Imprimir / PDF</button></div>`);
+    $('#rc', m).onclick = async () => { try { await navigator.clipboard.writeText(reportText(data)); toast('Reporte copiado'); } catch (e) { toast('No se pudo copiar: usen Imprimir o CSV'); } };
+    $('#rd', m).onclick = () => {
+      try {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([reportCSV(data)], { type: 'text/csv;charset=utf-8' }));
+        a.download = `reporte-oportunidades-${CODE}.csv`; document.body.appendChild(a); a.click(); a.remove();
+      } catch (e) { toast('No se pudo descargar'); }
+    };
+    $('#rp', m).onclick = () => { try { window.print(); } catch (e) { toast('No se pudo imprimir'); } };
+  }
+
   /* ---------------- FINAL ---------------- */
   SC.final = () => {
     const ranked = teamsList().sort((a, b) => score(b.id) - score(a.id));
     const pod = [ranked[1], ranked[0], ranked[2]].filter(Boolean);
+    const mine = ROLE === 'team' ? teamReport(myTeam()) : null;
     view(`<div class="final"><div class="cover-crystal">${Art.crystal([], 150, { all: true })}</div>
       <h1 class="cover-title sm">¡Caso cerrado!</h1>
       ${caption('El Cristal de la Confianza brilla otra vez sobre Nexópolis gracias a la Liga de Guardianes.')}
       <div class="podium">${pod.map(t => { const r = ranked.indexOf(t); return `<div class="pl" style="--tc:${t.color}"><div class="big-badge sm" style="--tc:${t.color}">${t.emoji}</div><b>${esc(t.name)}</b><span>${score(t.id)} ❤</span>
         <div class="badges-row">${badgesOf(t.id).map(b => badgeHTML(b, true)).join('')}</div><div class="bar h${r}">#${r + 1}</div></div>`; }).join('')}</div>
       ${ranked.length > 3 ? `<div class="row center">${ranked.slice(3).map((t, i) => `<span class="ttag" style="--tc:${t.color}"><i>#${i + 4}</i>${esc(t.name)} · ${score(t.id)} ❤</span>`).join('')}</div>` : ''}
+      ${mine ? `<div class="pnl my-opps"><h3 class="comic-h">${icon('magnifying-glass')} Sus oportunidades</h3>
+        <div class="kpis"><span><small>PRECISIÓN</small><b>${mine.acc != null ? mine.acc + '%' : '—'}</b></span><span><small>TIEMPO POR DECISIÓN</small><b>${mine.aht != null ? fmtS(mine.aht) : '—'}</b></span>
+          <span><small>CONSEJO</small><b>${mine.council.length ? `${mine.council.filter(c => c.ok).length}/${mine.council.length}` : '—'}</b></span></div>
+        ${mine.opps.length ? `<p>Las políticas que más les costaron. ¡Repásenlas juntos!</p><div class="codex">${mine.opps.slice(0, 3).map((o, i) => (policy(o.k) ? polCard(policy(o.k), false, i * .15).replace('<div class="pd">', `<div class="psens">${o.acc}% de precisión · ${o.bad} error${o.bad === 1 ? '' : 'es'}</div><div class="pd">`) : `<div class="pol-card" style="--pc:#2ec4b6"><div class="pen">${polLabel(o.k)}</div><div class="psens">${o.acc}% de precisión</div><div class="pd">Marcaron como infracción contenido que estaba permitido. Ante la duda, relean el contexto.</div></div>`)).join('')}</div>` : '<p>¡Sin errores repetidos! Excelente criterio.</p>'}
+      </div>` : ''}
       <h3 class="comic-h center mt">Los 5 valores que hoy defendimos</h3>
       <div class="values5">${DISTRICTS.map(d => `<div class="pnl" style="--dc:${d.color}">${icon(d.ico)}<h4>${LESSONS[d.id].value}</h4><p>${LESSONS[d.id].text}</p></div>`).join('')}</div>
       <p class="disclaimer">Políticas oficiales y actualizadas: Centro de Transparencia de Meta (transparency.meta.com).</p></div>`, { wide: true });
     sfx.fanfare(); [0, 700, 1400].forEach(t => later(() => confetti(150, innerWidth * (.25 + Math.random() * .5), innerHeight * .3), t));
-    hostCtrl(`<span class="ctrl-label">¡Fin!</span><button class="btn ghost" id="h-new">Nueva partida</button>`, dock => { $('#h-new', dock).onclick = () => ask('¿Crear una sala nueva? Esta partida terminará.', () => { store.set('nx-host', null); location.href = location.pathname; }, 'Nueva sala'); });
+    hostCtrl(`<span class="ctrl-label">¡Fin!</span><button class="btn red" id="h-rep">Reporte de oportunidades</button><button class="btn ghost" id="h-new">Nueva partida</button>`, dock => {
+      $('#h-rep', dock).onclick = openReport;
+      $('#h-new', dock).onclick = () => ask('¿Crear una sala nueva? Esta partida terminará. (Descarguen antes el reporte)', () => { store.set('nx-host', null); location.href = location.pathname; }, 'Nueva sala');
+    });
   };
 
   /* ================= Acciones del host ================= */
@@ -1178,9 +1448,13 @@
   }
   function hostEvent(ev) {
     if (!ev) return;
-    if (ev.k === 'pay' && team(ev.from) && team(ev.to)) {
-      const a = Math.min(Math.floor(ev.amt) || 0, score(ev.from));
-      if (a > 0) { award(ev.from, -a); award(ev.to, a); }
+    if (ev.k === 'accept') {
+      const o = ((D.market || {}).offers || {})[ev.offer];
+      if (!o || o.status !== 'open' || o.to !== ev.by || !team(o.from) || !team(o.to)) return;
+      const text = ((D.private || {})[o.from] || {})[o.mid], price = Math.max(0, Math.floor(o.price) || 0);
+      const status = !text ? 'failed' : score(o.to) < price ? 'nofunds' : 'accepted';
+      if (status === 'accepted') { award(o.to, -price); award(o.from, price); R.set(`private/${o.to}/${o.mid}`, text); }
+      R.set(`market/offers/${ev.offer}/status`, status);
     }
   }
   let watchT = null;
@@ -1190,7 +1464,7 @@
     clearTimeout(watchT);
     if (s.scene === 'mission' && m && m.phase === 'play') {
       const all = teamsList().length && teamsList().every(t => resOf(roundKey(m))[t.id]);
-      const endPlus = m.startAt + m.seconds * 1000 + 8000;
+      const endPlus = wallEnd(m) + 8000;
       if (all || Net.now() > endPlus) watchT = setTimeout(() => { const c = st().m; if (c && c.phase === 'play' && c.round === m.round) goResults(district(m.id), c); }, all ? 1500 : 0);
       else watchT = setTimeout(sync, Math.max(1000, endPlus - Net.now() + 200));
     }
@@ -1205,12 +1479,14 @@
       <button class="btn ghost" data-m="lobby">Mostrar el código de la sala</button>
       <button class="btn ghost" data-m="market">Saltar al Mercado de Pistas</button>
       <button class="btn ghost" data-m="score">Ajustar puntos</button>
+      <button class="btn ghost" data-m="report">Reporte de oportunidades</button>
       <button class="btn red" data-m="new">Crear una sala nueva</button></div>`, { small: true });
     $$('[data-m]', m).forEach(b => (b.onclick = () => {
       const a = b.dataset.m; closeModal();
       if (a === 'map') pub({ scene: 'map', m: null, clue: null });
       if (a === 'lobby') pub({ scene: 'lobby' });
-      if (a === 'market') pub({ scene: 'market', endsAt: Net.now() + 240000, m: null });
+      if (a === 'market') pub({ scene: 'market', endsAt: Net.now() + MARKET_SECS * 1000, m: null });
+      if (a === 'report') openReport();
       if (a === 'score') scoreEditor();
       if (a === 'new') ask('¿Crear una sala nueva? Esta partida terminará.', () => { store.set('nx-host', null); location.href = location.pathname; }, 'Nueva sala');
     }));

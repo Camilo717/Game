@@ -2,6 +2,9 @@
    EL CASO DEL CRISTAL ROBADO — Datos del juego
    Todo el contenido vive aquí. Todo está en español,
    excepto los nombres oficiales de las políticas y las decisiones.
+   IMPORTANTE: todo el contenido es FICTICIO a propósito. No pegues aquí
+   jobs reales, contenido de colas ni datos del cliente: así la dinámica
+   funciona sin afectar los requisitos de seguridad.
    ========================================================= */
 
 const TEAM_PRESETS = [
@@ -148,16 +151,16 @@ const CLUE_TEMPLATES = {
 const DISTRICTS = [
   {
     id: 'plaza', name: 'Plaza Azul', app: 'Facebook', value: 'VOZ', color: '#3a86ff', color2: '#9cc3ff', ico: 'newspaper', gi: 'stamper',
-    mission: 'Feed Frenético', minutes: 6, seconds: 60, kind: 'arcade',
+    mission: 'Feed Frenético', minutes: 6, seconds: 60, shifts: 3, kind: 'arcade',
     tagline: '¡El feed se desborda! Sellen cada publicación antes de que se acumulen.',
     steps: [['stamper', 'Sellen cada publicación con la decisión correcta'], ['bright-explosion', 'Aciertos seguidos = combo'], ['robot-antennas', 'Ojo: la IA asistente a veces se equivoca']],
     controls: 'feed',
   },
   {
     id: 'puerto', name: 'Puerto Verde', app: 'WhatsApp', value: 'SEGURIDAD', color: '#2ec4b6', color2: '#9ff0e7', ico: 'lighthouse', gi: 'fishing-hook',
-    mission: 'Caza de Anzuelos', minutes: 5, seconds: 45, kind: 'arcade',
+    mission: 'Caza de Anzuelos', minutes: 5, seconds: 60, shifts: 3, kind: 'arcade',
     tagline: 'La Capitana Anzuelo lanzó sus mensajes al mar nocturno.',
-    steps: [['envelope', 'Los mensajes llegan flotando'], ['fishing-hook', 'Toquen SOLO las estafas'], ['love-letter', 'Los mensajes reales restan puntos']],
+    steps: [['envelope', 'Los mensajes llegan flotando: léanlos con calma'], ['fishing-hook', 'Toquen SOLO las estafas'], ['love-letter', 'Los mensajes reales restan puntos']],
     controls: 'mouse',
   },
   {
@@ -169,14 +172,14 @@ const DISTRICTS = [
   },
   {
     id: 'torre', name: 'Torre Espiral', app: 'Threads', value: 'AUTENTICIDAD', color: '#ffcf33', color2: '#ffe999', ico: 'radio-tower', gi: 'mesh-network',
-    mission: 'Rompe la Cadena', minutes: 7, seconds: 40, kind: 'arcade', bonus: 'chain',
+    mission: 'Rompe la Cadena', minutes: 7, seconds: 46, shifts: 2, kind: 'arcade', bonus: 'chain',
     tagline: 'Un rumor falso corre por la red. ¡Córtenlo antes de que llegue a todos!',
     steps: [['fire', 'El rumor salta de usuario en usuario'], ['checked-shield', 'Toquen usuarios para verificarlos'], ['hourglass', 'La energía es limitada: ¡elijan bien!']],
     controls: 'mouse',
   },
   {
     id: 'nebulosa', name: 'Nebulosa Horizon', app: 'Meta Quest', value: 'PRIVACIDAD', color: '#9b5de5', color2: '#d2b6f5', ico: 'vr-headset', gi: 'flashlight',
-    mission: 'Escáner de Privacidad', minutes: 7, seconds: 40, kind: 'arcade', vault: true,
+    mission: 'Escáner de Privacidad', minutes: 7, seconds: 56, shifts: 2, kind: 'arcade', vault: true,
     tagline: 'El cómplice del ladrón lo publica TODO. Encuentren sus datos con la linterna.',
     steps: [['flashlight', 'Muevan la linterna por el perfil oculto'], ['cut-diamond', 'Toquen los datos que no deberían ser públicos'], ['combination-lock', 'Después: ¡carrera para abrir la bóveda!']],
     controls: 'mouse',
