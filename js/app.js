@@ -19,7 +19,15 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
   const suspect = id => SUSPECTS.find(s => s.id === id);
-  const district = id => DISTRICTS.find(d => d.id === id);
+  /* Cada distrito recibe el minijuego que le tocó en el sorteo de esta partida */
+  const district = id => {
+    const b = DISTRICTS.find(d => d.id === id); if (!b) return null;
+    const plan = { ...Content.DEFAULT_PLAN, ...((D.st || {}).plan || {}) }, g = Content.GAMES[plan[id]] ? plan[id] : Content.DEFAULT_PLAN[id];
+    return { ...b, ...Content.GAMES[g], game: g, focus: POLICIES.filter(p => p.district === id).map(p => p.id) };
+  };
+  const seedOf = () => (D.st || {}).seed || 1;
+  let profCache = null;
+  const prof = () => { const sd = seedOf(); if (!profCache || profCache.seed !== sd) profCache = { seed: sd, p: Content.profile(sd) }; return profCache.p; };
   const policy = id => POLICIES.find(p => p.id === id);
   const polChips = ids => `<div class="pol-chips">${ids.map(policy).map(p => `<span class="pol-chip">${p.icon} ${p.en}</span>`).join('')}</div>`;
   const dchip = k => `<span class="dchip" style="--dc:${DECISIONS[k].color}">${DECISIONS[k].label}</span>`;
@@ -179,7 +187,16 @@
   const score = id => (D.scores || {})[id] || 0;
   const myTeam = () => ME && team(ME);
   const unlocked = () => POLICIES.filter(p => (st().done || []).includes(p.district));
-  const myClues = () => Object.entries((D.private || {})[ME] || {}).map(([mid, text]) => ({ mid, text }));
+  /* Libreta: 'won' = ganada en una misión (real) · 'decoy' = señuelo falso sellado · 'bought' = comprada (¿real?) */
+  const LUPAS = 2;
+  const rid = () => Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+  const entryOf = (k, v) => (typeof v === 'string' ? { key: k, text: v, kind: 'won', mid: k } : v && v.text ? { key: k, ...v } : null);
+  const notebook = tid => Object.entries((D.private || {})[tid] || {}).map(([k, v]) => entryOf(k, v)).filter(Boolean).sort((a, b) => ({ won: 0, bought: 1, decoy: 2 }[a.kind] - { won: 0, bought: 1, decoy: 2 }[b.kind]) || (a.at || 0) - (b.at || 0));
+  const myClues = () => notebook(ME);
+  const lupasLeft = () => Math.max(0, LUPAS - ((D.lupas || {})[ME] || 0));
+  const fakeSet = () => new Set(ROLE === 'host' && H ? Object.keys(H.refs || {}).filter(r => H.refs[r] === false) : (((D.st || {}).reveal || {}).fakes || []));
+  const boardSig = () => `${myClues().length}|${myClues().map(c => c.check || '').join()}|${lupasLeft()}|${[...pendingVerify].join()}`;
+  const pendingVerify = new Set();
   const badgesOf = id => Object.keys((D.badges || {})[id] || {});
   /* Ajustes de la partida (los fija el moderador en la sala de espera) */
   const TEMPOS = { 1.35: 'Tranquilo', 1: 'Normal', 0.8: 'Rápido' };
@@ -230,7 +247,7 @@
   function openCodex(all = false) {
     const done = st().done || [];
     const m = modal(`<div class="kicker">Normas Comunitarias de Meta</div><h2 class="comic-h">${icon('files')} Archivo de Políticas · ${unlocked().length}/${POLICIES.length}</h2>
-      <p>Cada misión resuelta desbloquea las políticas de su distrito. Las de <b>protección especial</b> no se juegan, pero es clave conocerlas.</p>
+      <p>Cada misión resuelta desbloquea las políticas de su distrito. Las de <b>protección especial</b> aparecen en el juego solo como descripción del caso, sin contenido explícito.</p>
       ${DISTRICTS.map(d => `<h3 class="dist-h" style="--dc:${d.color}">${d.name} · ${d.value}</h3>
         <div class="codex">${POLICIES.filter(p => p.district === d.id).map(p => polCard(p, !all && !done.includes(d.id))).join('')}</div>`).join('')}
       ${!all && ROLE === 'host' ? '<div class="row center mt"><button class="btn sm ghost" id="all">Mostrar todas (moderador)</button></div>' : ''}`);
@@ -254,10 +271,26 @@
     return `<div class="cork">
       <div class="cork-suspects">${SUSPECTS.map((s, i) => `<div class="suspect-slot">${polaroid(s, { cross: ROLE === 'team', i })}${dossier(s)}</div>`).join('')}</div>
       ${ROLE === 'team' ? `<div class="cork-clues"><div class="note-title">${icon('notebook')} Libreta de pistas</div>
-        ${clues.length ? clues.map((c, i) => `<div class="clue-note" style="--rot:${[-2, 1.5, -1, 2, -1.5][i % 5]}deg"><span class="pin"></span><small>${district(c.mid) ? district(c.mid).name : ''}</small>${c.text}</div>`).join('') : '<div class="clue-note empty">Aún no tienen pistas. ¡Ganen misiones!</div>'}</div>` : ''}
+        ${clues.length ? clues.map((c, i) => noteHTML(c, i)).join('') : '<div class="clue-note empty">Aún no tienen pistas. ¡Ganen misiones!</div>'}
+        ${clues.some(c => c.kind === 'bought') ? `<div class="lupa-left">🔎 Lupas disponibles: <b>${lupasLeft()}</b> de ${LUPAS}</div>` : ''}</div>` : ''}
     </div>`;
   }
+  function noteHTML(c, i) {
+    const rot = `--rot:${[-2, 1.5, -1, 2, -1.5][i % 5]}deg`;
+    if (c.kind === 'decoy') return `<div class="clue-note decoy" style="${rot}"><span class="pin"></span><small>🎭 Señuelo · pista FALSA sellada</small><i>Contenido sellado. Véndanla para despistar a otros equipos.</i></div>`;
+    const truth = c.check === 'real' ? '<span class="truth ok">VERDADERA</span>' : c.check === 'fake' ? '<span class="truth no">FALSA</span>' : '';
+    const canCheck = c.kind === 'bought' && !c.check && ['market', 'accuse'].includes(st().scene);
+    const btn = canCheck ? (pendingVerify.has(c.key) ? '<button class="lupa-btn" disabled>Verificando…</button>' : lupasLeft() > 0 ? `<button class="lupa-btn" data-verify="${c.key}">🔎 Verificar con la lupa</button>` : '<span class="small">Sin lupas</span>') : '';
+    const where = c.kind === 'won' ? `✅ Ganada en ${district(c.mid) ? district(c.mid).name : '—'}` : `🛒 Comprada a ${team(c.from) ? esc(team(c.from).name) : 'otro equipo'}${c.check ? '' : ' · ¿será verdadera?'}`;
+    return `<div class="clue-note ${c.kind} ${c.check || ''}" style="${rot}"><span class="pin"></span><small>${where}</small>${c.text}${truth}${btn}</div>`;
+  }
   function bindBoard(root) {
+    $$('[data-verify]', root).forEach(b => (b.onclick = e => {
+      e.stopPropagation();
+      if (lupasLeft() <= 0) return toast('Ya usaron sus lupas');
+      pendingVerify.add(b.dataset.verify); R.push('in', { k: 'verify', by: ME, key: b.dataset.verify });
+      b.disabled = true; b.textContent = 'Verificando…'; sfx.whoosh();
+    }));
     $$('.polaroid[data-sid]', root).forEach(p => (p.onclick = () => {
       if (ROLE !== 'team' || p.closest('.acc')) return;
       const id = p.dataset.sid, c = crossed();
@@ -265,7 +298,9 @@
       p.classList.toggle('crossed'); sfx.stamp();
     }));
   }
+  let modalBoardSig = null;
   function openBoard() {
+    modalBoardSig = boardSig();
     const m = modal(`<div class="kicker">${ROLE === 'team' ? 'Toquen una foto para tacharla' : 'Sospechosos'}</div><h2 class="comic-h">${icon('magnifying-glass')} Tablero de evidencias</h2>${boardHTML()}`);
     bindBoard(m);
   }
@@ -284,6 +319,10 @@
       lastKey = key; clearTimers(); refresh = null; bindDock = null; dockHTML = '';
       (SC[st().scene] || SC.lobby)();
     } else if (refresh) refresh();
+    if (ROLE === 'team') {
+      myClues().forEach(c => { if (c.check) pendingVerify.delete(c.key); });
+      if (modalBoardSig !== null && $('#modal-root.open .cork')) { if (boardSig() !== modalBoardSig) { const sc = $('.modal').scrollTop; openBoard(); $('.modal').scrollTop = sc; } } else modalBoardSig = null;
+    }
     renderDock();
     if (ROLE === 'host') hostWatch();
   }
@@ -339,7 +378,8 @@
     store.set('nx-host', H);
     const room = Net.room(code);
     await room.set('meta', { created: Net.now(), v: 2 });
-    await room.set('st', { scene: 'lobby', done: [] });
+    const seed = 1 + Math.floor(Math.random() * 2e9);
+    await room.set('st', { scene: 'lobby', done: [], seed, plan: Content.plan() });
     enterHost(code);
   }
   function enterHost(code) {
@@ -437,9 +477,12 @@
         $('#settings', root).innerHTML = `<h3 class="comic-h">${icon('stopwatch')} Ajustes de la partida</h3>
           <div class="set-row"><span>Ritmo de los minijuegos</span><div class="seg">${Object.entries(TEMPOS).sort((a, b) => b[0] - a[0]).map(([v, l]) => `<button class="${+v === c.tempo ? 'sel' : ''}" data-tempo="${v}">${l}</button>`).join('')}</div></div>
           <div class="set-row"><span>Rotación de integrantes en los controles</span><div class="seg"><button class="${c.rotate ? 'sel' : ''}" data-rot="1">Sí</button><button class="${c.rotate ? '' : 'sel'}" data-rot="0">No</button></div></div>
+          <div class="set-row"><span>Minijuegos de esta partida</span><button class="btn sm" id="reroll">🎲 Sortear otros</button></div>
+          <div class="plan-list">${DISTRICTS.map(x => { const dd = district(x.id); return `<span class="plan-chip" style="--dc:${x.color}">${icon(dd.gi)}<b>${dd.mission}</b><small>${x.name}</small></span>`; }).join('')}</div>
           <p class="small" style="margin:6px 0 0"><b>Tranquilo</b> da más tiempo para leer y buscar. Con <b>rotación</b>, el juego pide cambiar de persona a mitad de cada misión y mide a cada integrante.</p>`;
         $$('[data-tempo]', root).forEach(b => (b.onclick = () => pub({ cfg: { ...cfg(), tempo: +b.dataset.tempo } })));
         $$('[data-rot]', root).forEach(b => (b.onclick = () => pub({ cfg: { ...cfg(), rotate: b.dataset.rot === '1' } })));
+        $('#reroll', root).onclick = () => { let pl; do { pl = Content.plan(); } while (JSON.stringify(pl) === JSON.stringify(st().plan)); sfx.whoosh(); pub({ plan: pl, seed: 1 + Math.floor(Math.random() * 2e9) }); };
         $$('[data-rm]', root).forEach(b => (b.onclick = () => ask(`¿Quitar a ${esc(team(b.dataset.rm).name)}?`, () => { R.remove(`teams/${b.dataset.rm}`); R.remove(`scores/${b.dataset.rm}`); }, 'Quitar')));
         hostCtrl(`<span class="ctrl-label">${ts.length} equipos</span><button class="btn red" id="h-start" ${ts.length < 2 ? 'disabled' : ''}>Empezar la historia ▶</button>`,
           dock => { $('#h-start', dock).onclick = () => pub({ scene: 'story', i: 0 }); });
@@ -511,7 +554,7 @@
       <div class="rules3">
         <div class="pnl rule"><div class="num">1</div>${icon('stopwatch')}<h3>Jueguen las misiones</h3><p>En cada distrito hay un minijuego. <b>Todos los equipos juegan a la vez</b>, cada uno en su computadora.</p></div>
         <div class="pnl rule"><div class="num">2</div>${icon('love-letter')}<h3>Ganen pistas secretas</h3><p>El mejor equipo de cada misión recibe una <b>pista privada</b> en su pantalla. Queda en su libreta.</p></div>
-        <div class="pnl rule"><div class="num">3</div>${icon('handcuffs')}<h3>Atrapen al culpable</h3><p>En el <b>Mercado de Pistas</b> negocien (¡o mientan!). Acusar bien da <b>+500 ❤</b>.</p></div>
+        <div class="pnl rule"><div class="num">3</div>${icon('handcuffs')}<h3>Atrapen al culpable</h3><p>En el <b>Mercado de Pistas</b> se venden sobres con pistas... y hay <b>señuelos falsos</b>. Usen la lupa y la lógica. Acusar bien da <b>+500 ❤</b>.</p></div>
       </div>
       ${caption('Consejo de detective: usen el botón «Tablero» (arriba) para tachar sospechosos y ver sus pistas en cualquier momento.')}`, { wide: true });
     hostCtrl(`<span class="ctrl-label">Reglas</span><button class="btn red" id="h-next">Al mapa de la ciudad ▶</button>`, dock => { $('#h-next', dock).onclick = () => pub({ scene: 'map' }); });
@@ -539,7 +582,7 @@
           <circle r="74" fill="url(#hatch)"/>
           <svg x="-46" y="-50" width="92" height="92" viewBox="0 0 512 512" style="color:#111">${ICONS[d.ico]}</svg>
           <g transform="translate(0 106) rotate(${k % 2 ? 2 : -2})"><rect x="-130" y="-28" width="260" height="66" fill="#f2e8d0" stroke="#111" stroke-width="4"/>
-            <text y="2" text-anchor="middle" class="d-name">${k + 1}. ${d.name}</text><text y="28" text-anchor="middle" class="d-mis">${d.mission}</text></g>
+            <text y="2" text-anchor="middle" class="d-name">${k + 1}. ${d.name}</text><text y="28" text-anchor="middle" class="d-mis">${district(d.id).mission}</text></g>
           ${ok ? `<g transform="translate(40 -62) rotate(-14)"><rect x="-74" y="-22" width="148" height="42" fill="#f2e8d0" stroke="#d7263d" stroke-width="5"/><text text-anchor="middle" y="11" class="solved-t">RESUELTO</text></g>` : ''}
           <circle cx="0" cy="-74" r="11" fill="#d7263d" stroke="#111" stroke-width="3"/>
           </g>
@@ -568,7 +611,11 @@
   /* ---------------- MISIÓN: cabecera e intro ---------------- */
   const mhead = d => `<div class="mhead" style="--dc:${d.color}"><div class="mbadge">${icon(d.gi)}</div><div><div class="mmeta"><span class="mval">${d.value}</span>${d.name} · ${d.app}</div><h1 class="comic-title">${d.mission}</h1></div></div>`;
   function controlsHTML(type) {
-    if (type === 'feed') return `<div class="ctrl-row">${['remove', 'disturbing', 'noviolation'].map(k => `<div class="ctrl" style="--dc:${DECISIONS[k].color}"><span class="kc big">${DECISIONS[k].key}</span><b>${DECISIONS[k].label}</b></div>`).join('')}</div><p class="small center">Flechas del teclado o botones en pantalla</p>`;
+    const two = `<div class="ctrl-row">${Object.keys(DECISIONS).map(k => `<div class="ctrl" style="--dc:${DECISIONS[k].color}"><span class="kc big">${DECISIONS[k].key}</span><b>${DECISIONS[k].label}</b></div>`).join('')}</div>`;
+    if (type === 'two') return `${two}<p class="small center">Flechas del teclado o botones en pantalla</p>`;
+    if (type === 'duel') return `<div class="ctrl-row"><div class="ctrl" style="--dc:${DECISIONS.delete.color}"><span class="kc big">←</span><b>La de la izquierda es DELETE</b></div><div class="ctrl" style="--dc:${DECISIONS.delete.color}"><span class="kc big">→</span><b>La de la derecha es DELETE</b></div></div>`;
+    if (type === 'belt') return `<div class="ctrl-row"><div class="ctrl" style="--dc:${DECISIONS.delete.color}"><span class="kc big">␣</span><b>DELETE (espacio o clic)</b></div><div class="ctrl" style="--dc:${DECISIONS.noaction.color}"><span class="kc big">→</span><b>NO ACTION = dejarla pasar</b></div></div>`;
+    if (type === 'sort') return `<div class="ctrl-row"><div class="ctrl" style="--dc:#ffcf33"><span class="kc big">1–4</span><b>Cajón de la política (o NO ACTION)</b></div></div>`;
     if (type === 'write') return `<div class="ctrl-row"><div class="ctrl" style="--dc:#ffcf33"><span class="kc big">✍</span><b>Escribir y votar</b></div></div>`;
     return `<div class="ctrl-row"><div class="ctrl" style="--dc:#2ec4b6"><span class="kc big">🖱</span><b>Clic en pantalla</b></div></div>`;
   }
@@ -621,7 +668,6 @@
   /* ---------------- ARCADE SIMULTÁNEO (con rotación de integrantes) ---------------- */
   const MYLOG = {};
   const roundKey = m => `${m.id}-${m.round}`;
-  const gameName = id => ({ plaza: 'feed', puerto: 'sea', torre: 'chain', nebulosa: 'scanner' }[id]);
   const resOf = key => (D.res || {})[key] || {};
   /* La ronda se divide en turnos iguales, con una pausa de "¡CAMBIO!" entre ellos.
      Todo se calcula desde startAt (hora del servidor), así todos los equipos van a la par. */
@@ -671,7 +717,7 @@
     const log = [];
     const det = { n: 0, ok: 0, ms: 0, nms: 0, pol: {}, mem: names.map(name => ({ name, n: 0, ok: 0, ms: 0, nms: 0 })) };
     const api = {
-      arena, sfx, log: e => log.push(e), tempo: m.tempo || 1,
+      arena, sfx, log: e => log.push(e), tempo: m.tempo || 1, focus: d.focus, privacy: prof(),
       add(n, x, y, txt, color, big) {
         score += n; scEl.textContent = score;
         scEl.parentElement.classList.remove('bump'); void scEl.offsetWidth; scEl.parentElement.classList.add('bump');
@@ -694,7 +740,7 @@
       if (ended) return; ended = true;
       Games.pause(false);
       if (ctl && ctl.onEnd) ctl.onEnd();
-      const stats = { ...(ctl && ctl.stats ? ctl.stats() : {}), detail: det };
+      const stats = { ...(ctl && ctl.stats ? ctl.stats() : {}), detail: det, game: d.game };
       if (ctl) ctl.stop();
       setOv('end', burst('¡TIEMPO!', '#ffcf33', 'big')); sfx.alarm();
       MYLOG[roundKey(m)] = log;
@@ -712,7 +758,7 @@
         const n = Math.ceil(c.pre);
         if (setOv('pre' + n, `<div class="ov-wait">${n > 3 ? caption(names[0] ? `Empieza en los controles: <b>${who(names[0], ME)}</b>` : '¡Atentos! La misión empieza en...') : ''}<div class="ov-big">${n}</div></div>`) && n <= 3) sfx.drum();
       } else {
-        if (!ctl) { setOv('', ''); ctl = Games[gameName(d.id)](api, d.id === 'nebulosa' ? profileHTML(true) : undefined); sfx.reveal(); }
+        if (!ctl) { setOv('', ''); ctl = Games[d.game](api, d.game === 'scanner' ? profileHTML(true) : undefined); sfx.reveal(); }
         if (c.phase === 'done') return finish();
         if (c.phase === 'swap') {
           if (!wasSwap) { wasSwap = true; Games.pause(true); sfx.alarm(); }
@@ -745,8 +791,8 @@
   function reviewHTML(d, log) {
     if (!log || !log.length) return '';
     const items = log.slice(0, 4).map(e => {
-      if (d.id === 'plaza') return `<div class="rv-item">${dchip(e.right)}${e.policy ? `<span class="pol-chip">${policy(e.policy).en}</span>` : ''}<span>${e.text}</span></div>`;
-      if (d.id === 'puerto') return `<div class="rv-item">${e.right === 'legit' ? '<span class="dchip" style="--dc:#2ec4b6">Era real</span>' : `<span class="dchip" style="--dc:#d7263d">Estafa</span><span class="pol-chip">${policy(e.policy).en}</span>`}<span>${e.text}</span></div>`;
+      if (e.kind === 'post') return `<div class="rv-item">${dchip(e.right)}${e.policy ? `<span class="pol-chip">${policy(e.policy).en}</span>` : ''}<span>${e.text}${e.why ? `<em class="why">${e.why}</em>` : ''}</span></div>`;
+      if (e.kind === 'msg') return `<div class="rv-item">${e.right === 'legit' ? '<span class="dchip" style="--dc:#2ec4b6">Era real</span>' : `<span class="dchip" style="--dc:#d7263d">Estafa</span><span class="pol-chip">${policy(e.policy).en}</span>`}<span>${e.text}</span></div>`;
       return '';
     }).join('');
     return items ? `<div class="review"><h4>Para repasar</h4>${items}</div>` : '';
@@ -810,7 +856,7 @@
 
   /* ---------------- BÓVEDA (Nebulosa) ---------------- */
   function profileHTML(shuffled) {
-    const P = PRIVACY;
+    const P = prof();
     const posts = shuffled ? shuffle(P.posts) : P.posts;
     return `<div class="profile">
       <div class="top"><div class="pav">${P.avatar}</div>
@@ -823,7 +869,7 @@
   const vaultOrder = m => Object.entries((D.vault || {})[roundKey(m)] || {}).sort((a, b) => a[1] - b[1]).map(([tid]) => tid);
   function vault(d, m) {
     if (ROLE === 'host') {
-      const root = view(`${mhead(d)}<div class="host-live"><div class="col center"><div id="ck"></div>${caption('Todos los equipos intentan abrir la bóveda de Toño Turbo con lo que él mismo publicó.')}</div>
+      const root = view(`${mhead(d)}<div class="host-live"><div class="col center"><div id="ck"></div>${caption(`Todos los equipos intentan abrir la bóveda de <b>${esc(prof().name)}</b> con lo que publicó en su perfil.`)}</div>
         <div class="col"><h3 class="comic-h">Orden de apertura</h3><div id="vo"></div></div></div>`, { wide: true });
       const paint = () => { const o = vaultOrder(m); $('#vo', root).innerHTML = teamsList().map(t => `<div class="bar-row" style="--tc:${t.color}">${teamTag(t)}<b>#${o.includes(t.id) ? `${o.indexOf(t.id) + 1} abierta` : '<span class="playing">intentando…</span>'}</b></div>`).join(''); };
       paint(); refresh = paint;
@@ -836,11 +882,11 @@
       <div class="vault-layout">
         <div class="paper-profile">${profileHTML(false)}</div>
         <div class="pnl vault ${mineOpen ? 'open' : ''}">
-          <div class="row" style="justify-content:space-between"><h2 class="comic-h">${icon('combination-lock')} Bóveda de Toño</h2><div id="ck"></div></div>
+          <div class="row" style="justify-content:space-between"><h2 class="comic-h">${icon('combination-lock')} Bóveda de ${esc(prof().name)}</h2><div id="ck"></div></div>
           ${rotating(ME) && !mineOpen ? `<div class="turn-box">${icon('key')}<div><small>EN EL TECLADO (TODOS AYUDAN A BUSCAR)</small><b>${who(playerAt(ME), ME)}</b></div></div>` : ''}
           <div class="vault-door" id="door"><div class="dial">${icon(mineOpen ? 'padlock-open' : 'padlock')}</div></div>
-          <div class="hint-box">${icon('key')} Pista de su contraseña:<br><b>${PRIVACY.hint}</b></div>
-          ${mineOpen ? `<div class="vault-ok">${burst('¡ABIERTA!', '#2ec4b6')}<p>Toño usó <b>datos que él mismo publicó</b>.</p>${polChips(['privacy'])}</div>`
+          <div class="hint-box">${icon('key')} Pista de su contraseña:<br><b>${prof().hint}</b></div>
+          ${mineOpen ? `<div class="vault-ok">${burst('¡ABIERTA!', '#2ec4b6')}<p>${esc(prof().name)} usó <b>datos que publicó en su propio perfil</b>.</p>${polChips(['privacy'])}</div>`
           : `<input class="pw-input" id="pw" placeholder="Contraseña" autocomplete="off" spellcheck="false"><button class="btn red big mt-s" id="try">Probar</button>`}
         </div>
       </div>`, { wide: true });
@@ -850,7 +896,7 @@
       const tryIt = () => {
         const v = pw.value.trim().toLowerCase().replace(/\s+/g, '');
         if (!v) return;
-        if (v === PRIVACY.answer) { R.set(`vault/${roundKey(m)}/${ME}`, Net.now()); sfx.reveal(); confetti(150); }
+        if (v === prof().answer) { R.set(`vault/${roundKey(m)}/${ME}`, Net.now()); sfx.reveal(); confetti(150); }
         else { door.classList.remove('shake'); void door.offsetWidth; door.classList.add('shake'); sfx.bad(); toast('ACCESO DENEGADO'); pw.select(); }
       };
       $('#try', root).onclick = tryIt;
@@ -957,7 +1003,7 @@
       if (ROLE === 'host') {
         const played = (H.councilPlayed || {})[m.round] || [];
         const root = view(`${mhead(d)}${caption('Elijan el próximo caso. Recomendado: 3 casos.')}
-          <div class="case-grid">${COUNCIL_CASES.map((c, i) => `<button class="case-tile ${played.includes(c.id) ? 'played' : ''}" data-id="${c.id}" style="animation-delay:${i * .05}s"><span class="ce">${c.image.emoji}</span><b>${c.title}</b>${played.includes(c.id) ? dchip(c.verdict) : ''}</button>`).join('')}</div>`, { wide: true });
+          <div class="case-grid">${Content.casesFor(seedOf()).map((c, i) => `<button class="case-tile ${played.includes(c.id) ? 'played' : ''}" data-id="${c.id}" style="animation-delay:${i * .05}s"><span class="ce">${c.image.emoji}</span><b>${c.title}</b>${played.includes(c.id) ? dchip(c.verdict) : ''}</button>`).join('')}</div>`, { wide: true });
         $$('.case-tile', root).forEach(b => (b.onclick = () => {
           H.councilPlayed = H.councilPlayed || {}; H.councilPlayed[m.round] = [...played, b.dataset.id]; saveH();
           pub({ m: { ...m, phase: 'write', caseId: b.dataset.id, endsAt: Net.now() + 80000 } });
@@ -968,7 +1014,7 @@
       } else view(`${mhead(d)}<div class="waiting">${icon('gavel', 'huge')}${caption('El Consejo se reúne... el moderador está eligiendo el caso.')}</div>`, { wide: true });
       return;
     }
-    const c = COUNCIL_CASES.find(x => x.id === m.caseId);
+    const c = Content.CASES.find(x => x.id === m.caseId);
     const ans = () => cData(m).ans || {}, votes = () => cData(m).votes || {};
     if (m.phase === 'write') {
       if (ROLE === 'host') {
@@ -1056,7 +1102,7 @@
     const key = 'c' + cKey(m);
     if (!H.awarded[key]) {
       H.awarded[key] = true;
-      const c = COUNCIL_CASES.find(x => x.id === m.caseId);
+      const c = Content.CASES.find(x => x.id === m.caseId);
       const data = cData(m), count = {};
       Object.values(data.votes || {}).forEach(t => (count[t] = (count[t] || 0) + 1));
       H.council[m.round] = H.council[m.round] || {};
@@ -1091,7 +1137,10 @@
       let clue = H.clues.find(c => c.mission === d.id);
       if (!clue) { clue = H.clues.find(c => !c.mission); if (clue) clue.mission = d.id; }
       const done = [...new Set([...(st().done || []), d.id])];
-      if (clue) [...sel].forEach(tid => R.set(`private/${tid}/${d.id}`, CLUE_TEMPLATES[clue.type](suspect(clue.sid))));
+      if (clue) {
+        clue.ref = clue.ref || rid(); H.refs = H.refs || {}; H.refs[clue.ref] = true;
+        [...sel].forEach(tid => R.set(`private/${tid}/${d.id}`, { text: CLUE_TEMPLATES[clue.type](suspect(clue.sid)), kind: 'won', mid: d.id, ref: clue.ref, at: Net.now() }));
+      }
       saveH();
       pub({ scene: 'clue', clue: { mission: d.id, holders: [...sel] }, done, m: null });
     };
@@ -1108,7 +1157,7 @@
       <h3 class="comic-h mt">${icon('files')} Nuevas políticas en el Archivo</h3>
       <div class="codex unlock">${POLICIES.filter(p => p.district === d.id).map((p, i) => polCard(p, false, .4 + i * .2)).join('')}</div></div>`, { wide: true });
     const paint = () => {
-      const text = mine ? ((D.private || {})[ME] || {})[c.mission] : null;
+      const e = mine ? entryOf(c.mission, ((D.private || {})[ME] || {})[c.mission]) : null, text = e && e.text;
       $('#cbox', root).innerHTML = mine ? `<div class="envelope-wrap"><div class="env">${icon('love-letter')}</div>
           <div class="clue-card"><div class="cc-head">PISTA SECRETA · SOLO PARA ${esc(myTeam().name.toUpperCase())}</div><div class="cc-text">${text || 'Abriendo el sobre…'}</div>
           <div class="cc-foot">${icon('notebook')} Guardada en su libreta (botón «Tablero»). ¡No se la cuenten a nadie... todavía!</div></div></div>`
@@ -1125,11 +1174,13 @@
     });
   };
 
-  /* ---------------- MERCADO DE PISTAS (ordenado y en silencio) ----------------
-     Se negocia con OFERTAS (pista verificada a cambio de corazones, con Aceptar/Rechazar)
-     y con pocos mensajes libres por equipo, para que no se vuelva un desorden. */
+  /* ---------------- MERCADO DE PISTAS ----------------
+     Se venden SOBRES con una pista: el comprador nunca sabe si es verdadera.
+     Cada equipo recibe 2 SEÑUELOS (pistas falsas selladas) para vender o engañar.
+     Para descubrir una falsa: la LUPA (2 por equipo) o la lógica:
+     una pista falsa siempre descarta al verdadero culpable. */
   const MSG_CAP = 3, MARKET_SECS = 180, PRICES = [0, 50, 100, 150, 200, 300];
-  const OFFER_STATUS = { open: 'PENDIENTE', accepted: 'ACEPTADA', rejected: 'RECHAZADA', nofunds: 'SIN FONDOS', failed: 'NO DISPONIBLE' };
+  const OFFER_STATUS = { open: 'PENDIENTE', accepted: 'VENDIDA', rejected: 'RECHAZADA', nofunds: 'SIN FONDOS', failed: 'NO DISPONIBLE' };
   const pendingAcc = new Set();
   const marketItems = () => {
     const mk = D.market || {};
@@ -1138,27 +1189,44 @@
       ...Object.entries(mk.offers || {}).map(([k, v]) => ({ k, type: 'offer', ...v })),
     ].sort((a, b) => (a.at || 0) - (b.at || 0));
   };
+  /* El moderador reparte los señuelos al abrir el mercado (una sola vez por sala) */
+  function makeDecoys() {
+    if (ROLE !== 'host' || !H || H.decoysDone) return;
+    H.refs = H.refs || {};
+    const culprit = suspect(H.culprit);
+    teamsList().forEach(t => shuffle(Object.keys(CLUE_TEMPLATES)).slice(0, 2).forEach((type, n) => {
+      const ref = rid(); H.refs[ref] = false;
+      R.set(`private/${t.id}/s${n + 1}`, { text: CLUE_TEMPLATES[type](culprit), kind: 'decoy', ref, at: Net.now() });
+    }));
+    H.decoysDone = true; saveH();
+  }
   function itemHTML(x) {
     const head = `<div class="msg-head">${teamTag(team(x.from))} → ${teamTag(team(x.to))}</div>`;
-    if (x.type === 'msg') return `<div class="msg text ${x.from === ME ? 'out' : ''}">${head}<div class="msg-stamp no">SIN VERIFICAR</div><p>${esc(x.text)}</p></div>`;
-    const dName = district(x.mid) ? district(x.mid).name : '';
-    let body = `<p>Oferta: una <b>pista verificada</b>${dName ? ` (${dName})` : ''} por <b>${x.price ? `${x.price} ❤` : 'nada: es un regalo'}</b>.</p>`;
-    if (x.status === 'accepted') {
-      const text = ROLE === 'team' && x.to === ME ? ((D.private || {})[ME] || {})[x.mid] : null;
-      body += text ? `<p class="offer-clue">${text}</p><p class="small">Añadida a su libreta.</p>` : `<p class="small">Pista entregada${x.price ? ` y ${x.price} ❤ transferidos` : ''}.</p>`;
+    if (x.type === 'msg') return `<div class="msg text ${x.from === ME ? 'out' : ''}">${head}<p>${esc(x.text)}</p></div>`;
+    let body = `<p>${icon('love-letter')} Ofrece un <b>sobre con una pista</b> por <b>${x.price ? `${x.price} ❤` : 'nada: es un regalo'}</b>.</p>`;
+    if (ROLE === 'host') {
+      const e = entryOf(x.key, ((D.private || {})[x.from] || {})[x.key]);
+      body += e ? `<p class="small">Vista del moderador: ${e.kind === 'decoy' ? '🎭 señuelo FALSO' : e.kind === 'won' ? '✅ pista real ganada' : `🛒 pista comprada (${(H.refs || {})[e.ref] === false ? 'falsa' : 'real'})`}</p>` : '';
+    }
+    if (x.status === 'accepted' && ROLE === 'team' && x.to === ME) {
+      const e = entryOf(`b${x.k}`, ((D.private || {})[ME] || {})[`b${x.k}`]);
+      body += e ? `<p class="offer-clue">${e.text}</p><p class="small">Guardada en su libreta. ¿Será verdadera? 🔎</p>` : '<p class="small">Abriendo el sobre…</p>';
+    } else if (x.status === 'accepted') {
+      body += `<p class="small">Sobre entregado${x.price ? ` y ${x.price} ❤ cobrados` : ''}.</p>`;
     } else if (x.status === 'open' && ROLE === 'team' && x.to === ME) {
       const poor = score(ME) < (x.price || 0), wait = pendingAcc.has(x.k);
-      body += `<div class="row"><button class="btn sm red" data-acc="${x.k}" ${poor || wait ? 'disabled' : ''}>${wait ? 'Procesando…' : 'Aceptar'}</button><button class="btn sm ghost" data-rej="${x.k}" ${wait ? 'disabled' : ''}>Rechazar</button>${poor ? '<span class="small warn">No les alcanzan los corazones</span>' : ''}</div>`;
+      body += `<div class="row"><button class="btn sm red" data-acc="${x.k}" ${poor || wait ? 'disabled' : ''}>${wait ? 'Procesando…' : 'Comprar'}</button><button class="btn sm ghost" data-rej="${x.k}" ${wait ? 'disabled' : ''}>Rechazar</button>${poor ? '<span class="small warn">No les alcanzan los corazones</span>' : ''}</div>`;
     }
     return `<div class="msg offer ${x.from === ME ? 'out' : ''}">${head}<div class="msg-stamp ${x.status === 'accepted' ? 'ok' : x.status === 'open' ? 'pay' : 'no'}">${OFFER_STATUS[x.status] || ''}</div>${body}</div>`;
   }
-  const QUIET = '<b>Mercado en silencio:</b> aquí se negocia <b>por escrito</b>, sin hablar de mesa a mesa. Ofertas ilimitadas y solo <b>' + MSG_CAP + ' mensajes libres</b> por equipo: ¡úsenlos bien!';
+  const QUIET = `<b>Mercado en silencio:</b> se negocia <b>por escrito</b>, sin hablar de mesa a mesa. Se venden <b>sobres con pistas</b>: nadie sabe si son verdaderas. Cada equipo tiene ${MSG_CAP} mensajes libres y 🔎 ${LUPAS} lupas.`;
   SC.market = () => {
     const endsAt = st().endsAt || Net.now() + MARKET_SECS * 1000;
     if (ROLE === 'host') {
+      makeDecoys();
       const root = view(`<h1 class="comic-title center">${icon('shaking-hands')} Mercado de Pistas</h1>
         <div class="host-live"><div class="col center"><div id="ck"></div>${caption(`${icon('silence')} ${QUIET}`)}
-          ${caption('Una <b>oferta</b> entrega una pista real (sello VERIFICADA) a cambio de corazones, y el juego hace el intercambio solo. Un <b>mensaje libre</b> llega SIN VERIFICAR: ahí pueden mentir.')}</div>
+          ${caption('Cada equipo recibió <b>2 señuelos</b>: sobres con pistas <b>falsas</b> para vender. Una pista falsa siempre descarta al verdadero culpable: si al tachar no queda nadie, alguna es falsa.')}</div>
         <div class="col"><h3 class="comic-h">Lo que circula (vista del moderador)</h3><div class="msg-feed" id="mf"></div></div></div>`, { wide: true });
       const paint = () => { const all = marketItems(); $('#mf', root).innerHTML = all.length ? all.slice(-40).reverse().map(itemHTML).join('') : '<p class="muted">Aún no hay movimientos.</p>'; };
       paint(); refresh = paint;
@@ -1174,9 +1242,10 @@
         <div class="col">
           <div class="pnl send-box"><div class="row" style="justify-content:space-between"><h3 class="comic-h">Negociar con otro equipo</h3><div id="ck"></div></div>
             <div class="to-pick">${others.map((t, i) => `<button class="to ${i === 0 ? 'sel' : ''}" data-t="${t.id}" style="--tc:${t.color}">${t.emoji} ${esc(t.name)}</button>`).join('')}</div>
-            <div class="tabs"><button class="tab sel" data-tab="offer">${icon('love-letter')} Ofrecer una pista</button><button class="tab" data-tab="text">${icon('chat-bubble')} Mensaje libre (<span id="left">${MSG_CAP}</span>)</button></div>
+            <div class="tabs"><button class="tab sel" data-tab="offer">${icon('love-letter')} Vender un sobre</button><button class="tab" data-tab="text">${icon('chat-bubble')} Mensaje libre (<span id="left">${MSG_CAP}</span>)</button></div>
             <div class="tab-body" id="tb"></div>
           </div>
+          ${caption('🧠 <b>Para detectar una falsa:</b> usen la lupa en las pistas compradas, o crucen datos: una pista falsa siempre descarta al verdadero culpable.', 'small-cap')}
           <h3 class="comic-h">Bandeja</h3><div class="msg-feed" id="mf"></div>
         </div>
       </div>`, { wide: true });
@@ -1184,30 +1253,31 @@
     clock($('#ck', root), endsAt, MARKET_SECS, { size: 70 });
     let to = others[0] && others[0].id, tab = 'offer', sel = 0, price = 100;
     const msgsLeft = () => MSG_CAP - marketItems().filter(x => x.type === 'msg' && x.from === ME).length;
+    const label = c => (c.kind === 'decoy' ? '🎭 Señuelo (pista FALSA sellada)' : c.kind === 'won' ? `✅ Pista ganada en ${district(c.mid) ? district(c.mid).name : '—'}` : `🛒 Pista comprada a ${team(c.from) ? esc(team(c.from).name) : '—'}`);
     const paintTab = () => {
       const tb = $('#tb', root);
       if (tab === 'offer') {
         const cl = myClues(); sel = Math.min(sel, Math.max(0, cl.length - 1));
-        tb.innerHTML = cl.length ? `<p class="small">Elijan una pista de su libreta y un precio. Si el otro equipo acepta, el juego entrega la pista y cobra los corazones.</p>
-          ${cl.map((c, i) => `<button class="clue-share ${i === sel ? 'sel' : ''}" data-i="${i}">${c.text}</button>`).join('')}
+        tb.innerHTML = cl.length ? `<p class="small">Elijan qué sobre vender y a qué precio. El otro equipo <b>no sabrá</b> si es verdadera o un señuelo hasta abrirla (y quizá ni así).</p>
+          ${cl.map((c, i) => `<button class="clue-share ${i === sel ? 'sel' : ''}" data-i="${i}"><small>${label(c)}</small>${c.kind === 'decoy' ? '<i>Contenido sellado</i>' : c.text}</button>`).join('')}
           <div class="row"><span>Precio:</span><div class="seg">${PRICES.map(p => `<button class="${p === price ? 'sel' : ''}" data-p="${p}">${p || 'Gratis'}</button>`).join('')}</div></div>
-          <button class="btn red" id="of">Enviar oferta</button>`
-          : '<p class="small">Todavía no tienen pistas para ofrecer. Esperen ofertas de otros equipos o pidan una con un mensaje libre.</p>';
+          <button class="btn red" id="of">Ofrecer el sobre</button>`
+          : '<p class="small">Todavía no tienen pistas. Esperen ofertas o pídanlas con un mensaje libre.</p>';
         $$('.clue-share', tb).forEach(b => (b.onclick = () => { sel = +b.dataset.i; paintTab(); }));
         $$('[data-p]', tb).forEach(b => (b.onclick = () => { price = +b.dataset.p; paintTab(); }));
         const of = $('#of', tb);
         if (of) of.onclick = () => {
           if (!to) return toast('No hay otros equipos');
           const c = cl[sel];
-          if (marketItems().some(x => x.type === 'offer' && x.from === ME && x.to === to && x.mid === c.mid && x.status === 'open')) return toast('Ya le hicieron esa oferta a ese equipo');
-          R.push('market/offers', { from: ME, to, mid: c.mid, price, status: 'open', at: Net.now() });
-          sfx.pop(); toast('Oferta enviada');
+          if (marketItems().some(x => x.type === 'offer' && x.from === ME && x.to === to && x.key === c.key && x.status === 'open')) return toast('Ya le ofrecieron ese sobre a ese equipo');
+          R.push('market/offers', { from: ME, to, key: c.key, price, status: 'open', at: Net.now() });
+          sfx.pop(); toast('Sobre ofrecido');
         };
       } else {
         const left = msgsLeft();
-        tb.innerHTML = left > 0 ? `<p class="small">Llegará con el sello <b>SIN VERIFICAR</b>: pueden pedir, proponer... o mentir. Les quedan <b>${left}</b>.</p>
-          <textarea id="mt" maxlength="160" placeholder="¿Nos venden la pista de la Plaza Azul por 100?"></textarea><button class="btn red" id="ms">Enviar mensaje</button>`
-          : '<p class="small warn">Ya usaron sus mensajes libres. Sigan negociando con ofertas.</p>';
+        tb.innerHTML = left > 0 ? `<p class="small">Pidan, propongan, presuman... o mientan. Les quedan <b>${left}</b>.</p>
+          <textarea id="mt" maxlength="160" placeholder="Tenemos la pista que descarta a la Dra. Viral. ¿150 ❤?"></textarea><button class="btn red" id="ms">Enviar mensaje</button>`
+          : '<p class="small warn">Ya usaron sus mensajes libres. Sigan negociando con sobres.</p>';
         const ms = $('#ms', tb);
         if (ms) ms.onclick = () => {
           const v = $('#mt', tb).value.trim(); if (!v) return;
@@ -1221,7 +1291,7 @@
     $$('.to', root).forEach(b => (b.onclick = () => { to = b.dataset.t; $$('.to', root).forEach(x => x.classList.toggle('sel', x === b)); }));
     $$('.tab', root).forEach(b => (b.onclick = () => { tab = b.dataset.tab; $$('.tab', root).forEach(x => x.classList.toggle('sel', x === b)); paintTab(); }));
     paintTab();
-    let seen = -1, nClues = myClues().length, sig = '';
+    let seen = -1, sigBoard = boardSig(), sig = '';
     const paint = () => {
       const mine = marketItems().filter(x => x.to === ME || x.from === ME);
       mine.forEach(x => { if (x.type === 'offer' && x.status !== 'open') pendingAcc.delete(x.k); });
@@ -1229,15 +1299,17 @@
       if (seen >= 0 && inbound > seen) sfx.pop();
       seen = inbound;
       $('#left', root).textContent = Math.max(0, msgsLeft());
-      const s2 = JSON.stringify(mine.map(x => [x.k, x.status])) + [...pendingAcc].join() + score(ME);
+      const s2 = JSON.stringify(mine.map(x => [x.k, x.status])) + [...pendingAcc].join() + score(ME) + myClues().length;
       if (s2 !== sig) {
         sig = s2;
         $('#mf', root).innerHTML = mine.length ? mine.slice().reverse().map(itemHTML).join('') : '<p class="muted">Aún no hay movimientos.</p>';
         $$('[data-acc]', root).forEach(b => (b.onclick = () => { pendingAcc.add(b.dataset.acc); R.push('in', { k: 'accept', offer: b.dataset.acc, by: ME }); sfx.stamp(); paint(); }));
         $$('[data-rej]', root).forEach(b => (b.onclick = () => { R.set(`market/offers/${b.dataset.rej}/status`, 'rejected'); sfx.click(); }));
       }
-      if (myClues().length !== nClues) {
-        nClues = myClues().length; sfx.reveal();
+      const sb = boardSig();
+      if (sb !== sigBoard) {
+        const more = sb.split('|')[0] > sigBoard.split('|')[0];
+        sigBoard = sb; if (more) sfx.reveal();
         $('#bd', root).innerHTML = boardHTML(); bindBoard($('#bd', root));
         if (tab === 'offer') paintTab();
       }
@@ -1254,7 +1326,7 @@
       hostCtrl(`<span class="ctrl-label">Acusación</span><button class="btn red" id="h-n">Desenmascarar al culpable ▶</button>`, dock => {
         $('#h-n', dock).onclick = () => {
           const missing = teamsList().filter(t => !(D.accus || {})[t.id]);
-          const go = () => pub({ scene: 'reveal', reveal: { culprit: H.culprit, at: Net.now() } });
+          const go = () => pub({ scene: 'reveal', reveal: { culprit: H.culprit, at: Net.now(), fakes: [...fakeSet()] } });
           missing.length ? ask(`${missing.map(t => esc(t.name)).join(', ')} aún no acusa. ¿Revelar igual?`, go, 'Revelar') : go();
         };
       });
@@ -1287,7 +1359,9 @@
     later(() => {
       const winners = teamsList().filter(t => accus[t.id] === rv.culprit);
       const me = ROLE === 'team' ? `<div class="burst-line">${accus[ME] === rv.culprit ? burst('¡ACERTARON! +500', '#2ec4b6') : burst('¡FALLARON!', '#d7263d')}</div>` : '';
-      $('#conf', root).innerHTML = `${me}<div class="speech">“${culprit.confession}”<span class="speech-who">— ${culprit.name}</span></div>
+      const fk = fakeSet(), bought = ROLE === 'team' ? myClues().filter(c => c.kind === 'bought') : [];
+      const truthHTML = bought.length ? `<div class="pnl truth-box"><h3 class="comic-h">${icon('magnifying-glass')} Las pistas que compraron</h3>${bought.map(c => `<div class="truth-row ${fk.has(c.ref) ? 'no' : 'ok'}"><span class="truth ${fk.has(c.ref) ? 'no' : 'ok'}">${fk.has(c.ref) ? 'FALSA' : 'VERDADERA'}</span><span>${c.text}</span><small>de ${team(c.from) ? esc(team(c.from).name) : '—'}</small></div>`).join('')}</div>` : '';
+      $('#conf', root).innerHTML = `${me}<div class="speech">“${culprit.confession}”<span class="speech-who">— ${culprit.name}</span></div>${truthHTML}
         ${caption(winners.length ? `Acertaron: ${winners.map(t => teamTag(t)).join(' ')} <b>+500 ❤</b>` : '¡Nadie acertó! El culpable casi se sale con la suya...')}`;
       if (ROLE === 'host' && !H.revealed) {
         H.revealed = true; saveH();
@@ -1301,7 +1375,7 @@
   /* ---------------- REPORTE DE OPORTUNIDADES ----------------
      Reúne lo que midió la dinámica: precisión por política, tiempo por decisión,
      decisiones del Consejo y desempeño por integrante (si hubo rotación). */
-  const polLabel = k => (k === 'none' ? 'Contenido permitido (NO VIOLATION)' : k === 'legit' ? 'Mensajes reales (falsos positivos)' : policy(k) ? policy(k).en : k);
+  const polLabel = k => (k === 'none' ? 'Contenido permitido (NO ACTION)' : k === 'legit' ? 'Mensajes reales (falsos positivos)' : policy(k) ? policy(k).en : k);
   const pct = (ok, n) => (n ? Math.round(ok / n * 100) : null);
   const oppsOf = (pol, min = 2) => Object.entries(pol || {}).map(([k, v]) => ({ k, ok: v[0] || 0, bad: v[1] || 0, n: (v[0] || 0) + (v[1] || 0) }))
     .filter(x => x.n >= min && x.bad > 0).map(x => ({ ...x, acc: pct(x.ok, x.n) })).sort((a, b) => a.acc - b.acc || b.bad - a.bad);
@@ -1312,21 +1386,24 @@
       const mid = key.split('-')[0], s = res.stats || {}, d = s.detail || {};
       Object.entries(d.pol || {}).forEach(([p, v]) => { r.pol[p] = r.pol[p] || [0, 0]; r.pol[p][0] += v[0] || 0; r.pol[p][1] += v[1] || 0; });
       r.n += d.n || 0; r.ok += d.ok || 0;
-      if (mid === 'plaza') { r.ms += d.ms || 0; r.nms += d.nms || 0; }
+      r.ms += d.ms || 0; r.nms += d.nms || 0;
+      const game = s.game || (district(mid) ? district(mid).game : '');
       (Array.isArray(d.mem) ? d.mem : Object.values(d.mem || {})).forEach(m => {
         if (!m || !m.name || !m.n) return;
         const a = r.mem[m.name] = r.mem[m.name] || { n: 0, ok: 0, ms: 0, nms: 0 };
         a.n += m.n; a.ok += m.ok || 0;
-        if (mid === 'plaza') { a.ms += m.ms || 0; a.nms += m.nms || 0; }
+        a.ms += m.ms || 0; a.nms += m.nms || 0;
       });
-      if (mid === 'torre' && s.health != null) r.chain = s.health;
-      if (mid === 'nebulosa' && s.found != null) { r.scan = s.found; r.missing = Array.isArray(s.missing) ? s.missing : Object.values(s.missing || {}); }
+      if (game === 'chain' && s.health != null) r.chain = s.health;
+      if (game === 'scanner' && s.found != null) { r.scan = s.found; r.missing = Array.isArray(s.missing) ? s.missing : Object.values(s.missing || {}); }
     });
     Object.entries(D.council || {}).forEach(([key, c]) => {
-      const cs = COUNCIL_CASES.find(x => x.id === key.slice(key.lastIndexOf('-') + 1)), a = ((c || {}).ans || {})[t.id];
+      const cs = Content.CASES.find(x => x.id === key.slice(key.lastIndexOf('-') + 1)), a = ((c || {}).ans || {})[t.id];
       if (cs && a) r.council.push({ title: cs.title, ok: a.dec === cs.verdict, dec: a.dec, right: cs.verdict, policies: cs.policies });
     });
     r.acc = pct(r.ok, r.n); r.aht = r.nms ? r.ms / r.nms / 1000 : null;
+    const fk = fakeSet(), bought = notebook(t.id).filter(e => e.kind === 'bought');
+    r.bought = bought.length; r.fakeBought = bought.filter(e => fk.has(e.ref)).length;
     r.opps = oppsOf(r.pol); if (!r.opps.length) r.opps = oppsOf(r.pol, 1);
     return r;
   }
@@ -1358,7 +1435,8 @@
           <span><small>TIEMPO POR DECISIÓN</small><b>${r.aht != null ? fmtS(r.aht) : '—'}</b></span>
           <span><small>CONSEJO</small><b>${r.council.length ? `${cOk}/${r.council.length}` : '—'}</b></span>
           <span><small>RED SANA</small><b>${r.chain != null ? r.chain + '%' : '—'}</b></span>
-          <span><small>ESCÁNER</small><b>${r.scan != null ? `${r.scan}/${Object.keys(PRIVACY.riskLabels).length}` : '—'}</b></span>
+          <span><small>PISTAS FALSAS COMPRADAS</small><b>${r.bought ? `${r.fakeBought}/${r.bought}` : '—'}</b></span>
+          <span><small>ESCÁNER</small><b>${r.scan != null ? `${r.scan}/${Object.keys(prof().riskLabels).length}` : '—'}</b></span>
         </div>
         ${r.opps.length ? `<p><b>A reforzar:</b> ${r.opps.slice(0, 3).map(o => `${polLabel(o.k)} (${o.acc}%, ${o.bad} error${o.bad === 1 ? '' : 'es'})`).join(' · ')}</p>` : `<p><b>A reforzar:</b> ${r.n ? 'sin errores en las políticas medidas.' : 'sin datos todavía.'}</p>`}
         ${r.council.filter(c => !c.ok).length ? `<p><b>Consejo:</b> ${r.council.filter(c => !c.ok).map(c => `«${c.title}»: eligieron ${DECISIONS[c.dec] ? DECISIONS[c.dec].label : c.dec}, era ${DECISIONS[c.right].label}`).join(' · ')}</p>` : ''}
@@ -1366,7 +1444,7 @@
         ${mem.length ? `<table class="rep-table sm"><tr><th>Integrante</th><th>Decisiones</th><th>Precisión</th><th>Tiempo por decisión</th></tr>
           ${mem.map(([name, a]) => `<tr><td>${who(name, r.t.id)}</td><td>${a.n}</td><td class="acc-cell">${accBar(pct(a.ok, a.n))}</td><td>${a.nms ? fmtS(a.ms / a.nms / 1000) : '—'}</td></tr>`).join('')}</table>` : ''}
       </div>`; }).join('')}</div>
-      <p class="small muted">Precisión = decisiones correctas / decisiones tomadas en Feed Frenético y Caza de Anzuelos. El tiempo por decisión se mide en Feed Frenético.</p>
+      <p class="small muted">Precisión = decisiones correctas / decisiones tomadas en los minijuegos de moderación y en Caza de Anzuelos. El tiempo por decisión se mide en los minijuegos de moderación (Feed, Archivo y Duelo).</p>
     </div>`;
   }
   function reportText(data) {
@@ -1451,10 +1529,21 @@
     if (ev.k === 'accept') {
       const o = ((D.market || {}).offers || {})[ev.offer];
       if (!o || o.status !== 'open' || o.to !== ev.by || !team(o.from) || !team(o.to)) return;
-      const text = ((D.private || {})[o.from] || {})[o.mid], price = Math.max(0, Math.floor(o.price) || 0);
-      const status = !text ? 'failed' : score(o.to) < price ? 'nofunds' : 'accepted';
-      if (status === 'accepted') { award(o.to, -price); award(o.from, price); R.set(`private/${o.to}/${o.mid}`, text); }
+      const e = entryOf(o.key, ((D.private || {})[o.from] || {})[o.key]), price = Math.max(0, Math.floor(o.price) || 0);
+      const status = !e ? 'failed' : score(o.to) < price ? 'nofunds' : 'accepted';
+      if (status === 'accepted') {
+        award(o.to, -price); award(o.from, price);
+        R.set(`private/${o.to}/b${ev.offer}`, { text: e.text, kind: 'bought', from: o.from, ref: e.ref || null, at: Net.now() });
+      }
       R.set(`market/offers/${ev.offer}/status`, status);
+    }
+    if (ev.k === 'verify') {
+      const e = entryOf(ev.key, ((D.private || {})[ev.by] || {})[ev.key]);
+      const used = (D.lupas || {})[ev.by] || 0;
+      if (!e || e.kind !== 'bought' || e.check || used >= LUPAS) return;
+      D.lupas = { ...(D.lupas || {}), [ev.by]: used + 1 };
+      R.set(`lupas/${ev.by}`, used + 1);
+      R.set(`private/${ev.by}/${ev.key}/check`, (H.refs || {})[e.ref] === false ? 'fake' : 'real');
     }
   }
   let watchT = null;
